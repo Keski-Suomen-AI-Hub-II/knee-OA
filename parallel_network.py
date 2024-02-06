@@ -42,18 +42,18 @@ class ParallelNetwork:
         model = Model(inputs=(input1, input2), outputs=output_layer)
         return model
 
-    def branch(self, branch_name, no_of_branch):
+    def branch(self, branch_name, num_of_branch):
         """Return the branch as a model."""
         input = layers.Input(self.input_shape)
-        preprocess, base = self.base_model(no_of_branch)
+        preprocess, base = self.base_model(num_of_branch)
         x = preprocess(input)
         x = base(x)
         #x1 = GlobalAveragePooling2D()(x1)
         model_branch = Model(inputs=input, outputs=x, name=branch_name)
         return model_branch
 
-    def base_model(self, no_of_branch):
-        name = self.base_models[no_of_branch]
+    def base_model(self, num_of_branch):
+        name = self.base_models[num_of_branch]
         """Return the proprocessor and the base model, without top layers."""
         if name == 'vgg-19':
             preprocessor = tf.keras.applications.vgg19.preprocess_input
