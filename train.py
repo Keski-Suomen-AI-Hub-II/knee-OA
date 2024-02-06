@@ -28,14 +28,13 @@ def train_model(model, ds_train, ds_val, config, trainlog_path,
                         save_weights_only=True,
                         mode='min')
     ]
-    history = model.fit(x=ds_train,
-                        validation_data=ds_val,
-                        epochs=config['n_epochs'],
-                        verbose=0,
-                        callbacks=cbs_list)
+    model.fit(x=ds_train,
+              validation_data=ds_val,
+              epochs=config['n_epochs'],
+              verbose=0,
+              callbacks=cbs_list)
     model.load_weights(checkpoint_path)
     shutil.rmtree(checkpoint_dirpath, ignore_errors=True)
-    return history
 
 
 def write_confusion_matrix(model, data, filepath, desc_text):
@@ -55,6 +54,8 @@ def write_confusion_matrix(model, data, filepath, desc_text):
 
 
 def grid_search(configs, search_path, src_shape, dest_shape):
+    best_results = []
+
     trainlog_path = os.path.sep.join([search_path, 'training.log'])
     checkpoint_dirpath = os.path.sep.join([search_path, 'temp'])
 
@@ -72,18 +73,35 @@ def grid_search(configs, search_path, src_shape, dest_shape):
                       metrics=['accuracy'])
         # To save GPU's memory, explicitly use CPU to load the data.
         with tf.device('CPU'):
-            ds_train = utils.load_as_dataset('data/train',
-                                             'data_autocropped/train',
+            ds_train = utils.load_as_dataset('hcontr_data/train',
+                                             'hcontr_data_autocropped/train',
                                              src_shape,
                                              config['batch_size'],
                                              random_seed=313)
-            ds_val = utils.load_as_dataset('data/val', 'data_autocropped/val',
+            ds_val = utils.load_as_dataset('hcontr_data/val',
+                                           'hcontr_data_autocropped/val',
                                            src_shape, config['batch_size'])
-            history = train_model(model, ds_train, ds_val, config,
-                                  trainlog_path, checkpoint_dirpath)
+        train_model(model, ds_train, ds_val, config, trainlog_path,
+                    checkpoint_dirpath)
+        # Print confusion matrix for the training and validation data.
         for (data, text) in [(ds_train, 'Training data:\n'),
                              (ds_val, 'Validation data:\n')]:
             write_confusion_matrix(model, data, trainlog_path, text)
+        # Calculate val loss, save the model, and make sure that only the
+        # 2 best models are saved.
+        val_loss, _ = model.evaluate(ds_val)
+        best_results.append((i, val_loss, model))
+        if len(best_results) > 2:
+            best_results.sort(key=lambda el: el[1])
+            del best_results[-1]
+    return best_results
+
+
+def save_models(dirpath, results):
+    for i, metric, model in results:
+        filename = '{}_{:.3f}.keras'.format(i, metric)
+        filepath = os.path.sep.join([dirpath, filename])
+        model.save(filepath)
 
 
 def main():
@@ -101,16 +119,17 @@ def main():
 
     # Grid search directory is named using starting time.
     time = datetime.now().strftime('%y-%m-%d-%H%M%S')
-    search_path = 'grid_search_{}'.format(time)
+    search_path = 'training_{}'.format(time)
     if not os.path.exists(search_path):
         os.mkdir(search_path)
 
-    # # Perform grid search.
+    # Perform grid search and save the best models.
     gpu_id = int(sys.argv[1])
     utils.reserve_gpu(gpu_id)
     src_shape = (224, 224)
     dest_shape = (224, 224, 3)
-    grid_search(configs, search_path, src_shape, dest_shape)
+    best_results = grid_search(configs, search_path, src_shape, dest_shape)
+    save_models(search_path, best_results)
 
 
 if __name__ == '__main__':
