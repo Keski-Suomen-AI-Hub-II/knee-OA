@@ -23,10 +23,10 @@ def train_model(model, ds_train, ds_val, config, trainlog_path,
     cbs_list = [
         CSVLogger(trainlog_path, append=True),
         ModelCheckpoint(checkpoint_path,
-                        monitor='val_loss',
+                        monitor='val_accuracy',
                         save_best_only=True,
                         save_weights_only=True,
-                        mode='min')
+                        mode='max')
     ]
     model.fit(x=ds_train,
               validation_data=ds_val,
@@ -92,7 +92,7 @@ def grid_search(configs, search_path, src_shape, dest_shape):
         val_loss, _ = model.evaluate(ds_val)
         best_results.append((i, val_loss, model))
         if len(best_results) > 2:
-            best_results.sort(key=lambda el: el[1])
+            best_results.sort(key=lambda el: el[1], reverse=True)
             del best_results[-1]
     return best_results
 
