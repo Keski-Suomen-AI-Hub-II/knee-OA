@@ -53,7 +53,7 @@ def write_confusion_matrix(model, data, filepath, desc_text):
         f.write('\n')
 
 
-def grid_search(configs, search_path, src_shape, dest_shape):
+def grid_search(configs, search_path, src_shape, dest_shape, n_models_to_save):
     best_results = []
 
     trainlog_path = os.path.sep.join([search_path, 'training.log'])
@@ -81,19 +81,23 @@ def grid_search(configs, search_path, src_shape, dest_shape):
             ds_val = utils.load_as_dataset('hcontr_data/val',
                                            'hcontr_data_autocropped/val',
                                            src_shape, config['batch_size'])
+        # Train the model. With the best weights, print confusion matrix for
+        # the training and validation data.
         train_model(model, ds_train, ds_val, config, trainlog_path,
                     checkpoint_dirpath)
-        # Print confusion matrix for the training and validation data.
         for (data, text) in [(ds_train, 'Training data:\n'),
                              (ds_val, 'Validation data:\n')]:
             write_confusion_matrix(model, data, trainlog_path, text)
-        # Calculate val loss, save the model, and make sure that only the
-        # 2 best models are saved.
-        val_loss, _ = model.evaluate(ds_val)
-        best_results.append((i, val_loss, model))
-        if len(best_results) > 2:
-            best_results.sort(key=lambda el: el[1], reverse=True)
-            del best_results[-1]
+        # If models are to be saved, then:
+        #   calculate val accuracy
+        #   save the model
+        #   make sure that only the n_models_to_save best models are saved.
+        if n_models_to_save > 0:
+            _, val_accuracy = model.evaluate(ds_val)
+            best_results.append((i, val_accuracy, model))
+            if len(best_results) > n_models_to_save:
+                best_results.sort(key=lambda el: el[1], reverse=True)
+                del best_results[-1]
     return best_results
 
 
@@ -125,11 +129,14 @@ def main():
 
     # Perform grid search and save the best models.
     gpu_id = int(sys.argv[1])
+    n_models_to_save = int(sys.argv[2])
     utils.reserve_gpu(gpu_id)
     src_shape = (224, 224)
     dest_shape = (224, 224, 3)
-    best_results = grid_search(configs, search_path, src_shape, dest_shape)
-    save_models(search_path, best_results)
+    best_results = grid_search(configs, search_path, src_shape, dest_shape,
+                               n_models_to_save)
+    if n_models_to_save > 0:
+        save_models(search_path, best_results)
 
 
 if __name__ == '__main__':
