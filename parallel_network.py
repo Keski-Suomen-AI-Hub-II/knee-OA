@@ -69,5 +69,6 @@ class ParallelNetwork:
         base = base(include_top=False,
                     weights=self.weights,
                     input_shape=self.input_shape)
-        base.trainable = False
+        if self.weights is not None:
+            base.trainable = False
         return preprocessor, base
