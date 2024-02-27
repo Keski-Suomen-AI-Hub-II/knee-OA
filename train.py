@@ -8,7 +8,8 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
+from tensorflow.keras.callbacks import CSVLogger, EarlyStopping, \
+    ModelCheckpoint
 from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import ParameterGrid
@@ -22,6 +23,10 @@ def train_model(model, ds_train, ds_val, config, trainlog_path,
     checkpoint_path = os.path.sep.join([checkpoint_dirpath, 'checkpoint'])
     cbs_list = [
         CSVLogger(trainlog_path, append=True),
+        EarlyStopping(monitor='val_accuracy',
+                      patience=15,
+                      verbose=0,
+                      mode='max'),
         ModelCheckpoint(checkpoint_path,
                         monitor='val_accuracy',
                         save_best_only=True,
@@ -63,6 +68,7 @@ def grid_search(configs, search_path, src_shape, dest_shape, n_models_to_save):
     for i, config in configs:
         with open(trainlog_path, mode='a') as f:
             f.write('Configuration {}: {}\n'.format(i, config))
+        tf.keras.backend.clear_session()
         network = ParallelNetwork(dest_shape,
                                   config['base_models'],
                                   weights=config['weights'],
