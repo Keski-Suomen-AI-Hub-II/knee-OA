@@ -64,6 +64,21 @@ class ParallelNetwork:
         elif name == 'xception':
             preprocessor = tf.keras.applications.xception.preprocess_input
             base = tf.keras.applications.xception.Xception
+        elif name == 'densenet-121':
+            preprocessor = tf.keras.applications.densenet.preprocess_input
+            base = tf.keras.applications.densenet.DenseNet121
+        elif name == 'densenet-169':
+            preprocessor = tf.keras.applications.densenet.preprocess_input
+            base = tf.keras.applications.densenet.DenseNet169
+        elif name == 'densenet-201':
+            preprocessor = tf.keras.applications.densenet.preprocess_input
+            base = tf.keras.applications.densenet.DenseNet201
+        elif name == 'resnet-50':
+            preprocessor = tf.keras.applications.resnet50.preprocess_input
+            base = tf.keras.applications.resnet50.ResNet50
+        elif name == 'regnetx-002':
+            preprocessor = tf.keras.applications.regnet.preprocess_input
+            base = tf.keras.applications.regnet.RegNetX002
         else:
             return None
         base = base(include_top=False,
