@@ -14,6 +14,7 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import ParameterGrid
 
+from data_loader import DataLoader
 from parallel_network import ParallelNetwork
 import utils
 
@@ -60,9 +61,15 @@ def write_confusion_matrix(model, data, filepath, desc_text):
 
 def grid_search(configs, search_path, src_shape, dest_shape, n_models_to_save):
     best_results = []
-
     trainlog_path = os.path.sep.join([search_path, 'training.log'])
     checkpoint_dirpath = os.path.sep.join([search_path, 'temp'])
+
+    # Initialize data loader for training and evaluation data.
+    dl_train = DataLoader('hcontr_data/train',
+                          'hcontr_data_autocropped/train',
+                          src_shape,
+                          random_state=17)
+    dl_eval = DataLoader('hcontr_data/val', 'hcontr_data_autocropped/val')
 
     # Iterate over the configurations.
     for i, config in configs:
@@ -77,16 +84,8 @@ def grid_search(configs, search_path, src_shape, dest_shape, n_models_to_save):
         model.compile(optimizer=Adam(learning_rate=config['lr'], beta_1=.85),
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
-        # To save GPU's memory, explicitly use CPU to load the data.
-        with tf.device('CPU'):
-            ds_train = utils.load_as_dataset('hcontr_data/train',
-                                             'hcontr_data_autocropped/train',
-                                             src_shape,
-                                             config['batch_size'],
-                                             random_seed=313)
-            ds_val = utils.load_as_dataset('hcontr_data/val',
-                                           'hcontr_data_autocropped/val',
-                                           src_shape, config['batch_size'])
+        ds_train = dl_train.load_as_dataset(config['batch_size'])
+        ds_val = ds_val.load_as_dataset(config['batch_size'])
         # Train the model. With the best weights, print confusion matrix for
         # the training and validation data.
         train_model(model, ds_train, ds_val, config, trainlog_path,
