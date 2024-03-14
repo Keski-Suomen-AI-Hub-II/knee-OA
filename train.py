@@ -69,7 +69,8 @@ def grid_search(configs, search_path, src_shape, dest_shape, n_models_to_save):
                           'hcontr_data_autocropped/train',
                           src_shape,
                           random_state=17)
-    dl_eval = DataLoader('hcontr_data/val', 'hcontr_data_autocropped/val')
+    dl_val = DataLoader('hcontr_data/val', 'hcontr_data_autocropped/val',
+                        src_shape)
 
     # Iterate over the configurations.
     for i, config in configs:
@@ -81,11 +82,11 @@ def grid_search(configs, search_path, src_shape, dest_shape, n_models_to_save):
                                   weights=config['weights'],
                                   dropout=config['dropout'])
         model = network.build()
-        model.compile(optimizer=Adam(learning_rate=config['lr'], beta_1=.85),
+        model.compile(optimizer=Adam(learning_rate=config['lr']),
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
         ds_train = dl_train.load_as_dataset(config['batch_size'])
-        ds_val = ds_val.load_as_dataset(config['batch_size'])
+        ds_val = dl_val.load_as_dataset(config['batch_size'])
         # Train the model. With the best weights, print confusion matrix for
         # the training and validation data.
         train_model(model, ds_train, ds_val, config, trainlog_path,
@@ -108,9 +109,9 @@ def grid_search(configs, search_path, src_shape, dest_shape, n_models_to_save):
 
 def save_models(dirpath, results):
     for i, metric, model in results:
-        filename = '{}_{:.3f}.keras'.format(i, metric)
+        filename = '{}_{:.3f}.h5'.format(i, metric)
         filepath = os.path.sep.join([dirpath, filename])
-        model.save(filepath)
+        model.save_weights(filepath)
 
 
 def main():

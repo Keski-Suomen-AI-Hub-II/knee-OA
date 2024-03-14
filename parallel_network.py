@@ -30,15 +30,13 @@ class ParallelNetwork:
         branch2_output = model2(input2)
         combined = layers.Concatenate(axis=-1)(
             [branch1_output, branch2_output])
-        #x = GlobalAveragePooling2D()(combined)
-        x = layers.Flatten()(combined)
+        x = GlobalAveragePooling2D()(combined)
+        #x = layers.Flatten()(combined)
         #x = Dense(4096, activation='relu')(x)
-        x = layers.Dense(1024, activation='tanh',
-                         kernel_regularizer=L2(.04))(x)
+        # x = layers.Dense(1024, activation='tanh',
+        #                  kernel_regularizer=L2(.04))(x)
         x = layers.Dropout(self.dropout)(x)
-        output_layer = layers.Dense(5,
-                                    activation='softmax',
-                                    kernel_regularizer=L2(.04))(x)
+        output_layer = layers.Dense(5, activation='softmax')
         model = Model(inputs=(input1, input2), outputs=output_layer)
         return model
 
