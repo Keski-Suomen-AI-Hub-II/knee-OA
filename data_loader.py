@@ -13,17 +13,15 @@ class DataLoader:
                  dirname1,
                  dirname2,
                  input_shape,
-                 random_state=None,
+                 input_names,
                  n_classes=5,
-                 input1_name='input1',
-                 input2_name='input2'):
+                 random_state=None):
         self.dirname1 = dirname1
         self.dirname2 = dirname2
-        self.n_classes = n_classes
         self.input_shape = input_shape
+        self.input_names = input_names
+        self.n_classes = n_classes
         self.random_state = random_state
-        self.input1_name = input1_name
-        self.input2_name = input2_name
 
         # Output will always be RGB, i.e. 3 channels.
         self.output_shape = (self.input_shape[0], self.input_shape[1], 3)
@@ -44,30 +42,41 @@ class DataLoader:
         filepaths = self.filepaths()
         for filepath1 in filepaths:
             classname = int(filepath1.split(os.sep)[-2])
-            label = np.zeros(self.n_classes)
-            label[classname] = 1.0
+            if self.n_classes == 2:
+                label = np.zeros(1)
+                label[0] = float(classname)
+            else:
+                label = np.zeros(self.n_classes)
+                label[classname] = 1.0
+            label.astype('float32')
             filepath2 = filepath1.replace(self.dirname1, self.dirname2, 1)
             img1 = imread(filepath1).astype('float32')
             img2 = imread(filepath2).astype('float32')
             if convert_to_rgb:
                 img1 = gray2rgb(img1)
                 img2 = gray2rgb(img2)
-            yield ({self.input1_name: img1, self.input2_name: img2}, label)
+            yield ({
+                self.input_names[0]: img1,
+                self.input_names[1]: img2
+            }, label)
 
     def load_as_dataset(self, batch_size):
+        if self.n_classes == 2:
+            label_shape = 1
+        else:
+            label_shape = self.n_classes
         ds = tf.data.Dataset.from_generator(
             self.gen_data,
             output_signature=({
-                self.input1_name:
+                self.input_names[0]:
                 tf.TensorSpec(shape=self.output_shape,
                               dtype=tf.float32,
                               name=None),
-                self.input2_name:
+                self.input_names[1]:
                 tf.TensorSpec(shape=self.output_shape,
                               dtype=tf.float32,
                               name=None)
-            },
-                              tf.TensorSpec(shape=(self.n_classes),
-                                            dtype=tf.float32,
-                                            name=None))).batch(batch_size)
+            }, tf.TensorSpec(shape=(label_shape, ),
+                             dtype=tf.float32,
+                             name=None))).batch(batch_size)
         return ds

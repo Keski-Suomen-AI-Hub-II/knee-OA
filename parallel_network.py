@@ -8,51 +8,58 @@ class ParallelNetwork:
     def __init__(self,
                  input_shape,
                  base_models,
-                 weights='imagenet',
-                 input_names=('input1', 'input2'),
+                 branch_names,
+                 input_names,
+                 classes=5,
+                 weights=('imagenet', 'imagenet'),
                  dropout=.2):
         self.input_shape = input_shape
         self.base_models = base_models
-        self.weights = weights
+        self.branch_names = branch_names
         self.input_names = input_names
+        self.classes = classes
+        self.weights = weights
         self.dropout = dropout
 
     def build(self):
         """Return the model."""
         # Branches are defined as model1 and model2.
-        model1 = self.branch('branch1', 0)
-        model2 = self.branch('branch2', 1)
+        model1 = self.branch(0)
+        model2 = self.branch(1)
         # Models model1 and model2 are then used as building blocks
-        # for the final model.
+        # for the final model. The training attribute (not the same as
+        # trainable!) is set to False just in case any of the base models
+        # has BatchNormalization layer. For more information about that, see
+        # https://www.tensorflow.org/guide/keras/transfer_learning.
         input1 = layers.Input(self.input_shape, name=self.input_names[0])
-        branch1_output = model1(input1)
+        branch1_output = model1(input1, training=False)
         input2 = layers.Input(self.input_shape, name=self.input_names[1])
-        branch2_output = model2(input2)
+        branch2_output = model2(input2, training=False)
         combined = layers.Concatenate(axis=-1)(
             [branch1_output, branch2_output])
-        x = GlobalAveragePooling2D()(combined)
-        #x = layers.Flatten()(combined)
-        #x = Dense(4096, activation='relu')(x)
-        # x = layers.Dense(1024, activation='tanh',
-        #                  kernel_regularizer=L2(.04))(x)
+        x = layers.GlobalAveragePooling2D()(combined)
         x = layers.Dropout(self.dropout)(x)
-        output_layer = layers.Dense(5, activation='softmax')
+        if self.classes == 2:
+            output_layer = layers.Dense(1, activation='sigmoid')(x)
+        else:
+            output_layer = layers.Dense(self.classes, activation='softmax')(x)
         model = Model(inputs=(input1, input2), outputs=output_layer)
         return model
 
-    def branch(self, branch_name, num_of_branch):
+    def branch(self, branch_id):
         """Return the branch as a model."""
         input = layers.Input(self.input_shape)
-        preprocess, base = self.base_model(num_of_branch)
+        preprocess, base = self.base_model(branch_id)
         x = preprocess(input)
         x = base(x)
-        #x1 = GlobalAveragePooling2D()(x1)
-        model_branch = Model(inputs=input, outputs=x, name=branch_name)
+        model_branch = Model(inputs=input,
+                             outputs=x,
+                             name=self.branch_names[branch_id])
         return model_branch
 
-    def base_model(self, num_of_branch):
-        name = self.base_models[num_of_branch]
-        """Return the proprocessor and the base model, without top layers."""
+    def base_model(self, branch_id):
+        """Return the proprocessor and the base model without top layers."""
+        name = self.base_models[branch_id]
         if name == 'vgg-19':
             preprocessor = tf.keras.applications.vgg19.preprocess_input
             base = tf.keras.applications.vgg19.VGG19
@@ -80,8 +87,6 @@ class ParallelNetwork:
         else:
             return None
         base = base(include_top=False,
-                    weights=self.weights,
+                    weights=self.weights[branch_id],
                     input_shape=self.input_shape)
-        if self.weights is not None:
-            base.trainable = False
         return preprocessor, base

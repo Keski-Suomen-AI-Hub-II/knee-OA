@@ -1,10 +1,12 @@
 import os
 
 import numpy as np
+import tensorflow as tf
 from skimage.exposure import rescale_intensity
 from skimage.feature import match_template
 from skimage.io import imread, imsave
 from skimage.transform import resize
+from sklearn.metrics import confusion_matrix
 from tensorflow.config import list_physical_devices, set_visible_devices
 from tensorflow.config.experimental import set_memory_growth
 
@@ -15,6 +17,23 @@ def reserve_gpu(id):
         gpu = gpus[id]
         set_visible_devices(gpu, 'GPU')
         set_memory_growth(gpu, True)
+
+
+def write_confusion_matrix(model, data, filepath, desc_text, multiclass=True):
+    """Save confusion matrix to a given filepath."""
+    labels = np.concatenate([label for _, label in data], axis=0)
+    labels = tf.math.argmax(labels, axis=-1)
+    preds = model.predict(data)
+    preds = tf.math.argmax(preds, axis=-1)
+    cm = confusion_matrix(labels, preds)
+    with open(filepath, mode='a') as f:
+        f.write(desc_text)
+        f.write(str(cm))
+        f.write('\n')
+        for i in range(cm.shape[0]):
+            class_acc = cm[i, i] / sum(cm[i])
+            f.write('Class {}: {:.6f}\n'.format(i, class_acc))
+        f.write('\n')
 
 
 def enhance_images(src_path, dst_path):
