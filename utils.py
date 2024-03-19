@@ -12,6 +12,8 @@ from tensorflow.config.experimental import set_memory_growth
 
 
 def reserve_gpu(id):
+    if id < 0:
+        return
     gpus = list_physical_devices('GPU')
     if gpus:
         gpu = gpus[id]

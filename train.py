@@ -12,9 +12,9 @@ from sklearn.model_selection import ParameterGrid
 from tensorflow.keras import callbacks
 from tensorflow.keras.optimizers import Adam
 
+import utils
 from data_loader import DataLoader
 from parallel_network import ParallelNetwork
-import utils
 
 
 def train_model(model, ds_train, ds_val, epochs, trainlog_path,
@@ -41,23 +41,23 @@ def train_model(model, ds_train, ds_val, epochs, trainlog_path,
     shutil.rmtree(checkpoint_dirpath, ignore_errors=True)
 
 
-def grid_search(dir1_train, dir2_train, dir1_val, dir2_val, classes, configs,
-                training_path, src_shape, dest_shape, n_epochs, batch_size,
-                n_save):
+def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
+                src_shape, dest_shape, n_epochs, batch_size, n_save):
     best_results = []
     trainlog_path = os.path.sep.join([training_path, 'training.log'])
     checkpoint_dirpath = os.path.sep.join([training_path, 'temp'])
+    input_names = ('input1', 'input2')
+    branch_names = ('branch1', 'branch2')
 
     # Initialize data loader for training and evaluation data.
-    input_names = ('input1', 'input2')
-    dl_train = DataLoader(dir1_train,
-                          dir2_train,
+    dl_train = DataLoader(traindata_dirs[0],
+                          traindata_dirs[1],
                           src_shape,
                           input_names,
                           n_classes=classes,
                           random_state=17)
-    dl_val = DataLoader(dir1_val,
-                        dir2_val,
+    dl_val = DataLoader(valdata_dirs[0],
+                        valdata_dirs[1],
                         src_shape,
                         input_names,
                         n_classes=classes)
@@ -66,7 +66,6 @@ def grid_search(dir1_train, dir2_train, dir1_val, dir2_val, classes, configs,
     ds_val = dl_val.load_as_dataset(batch_size)
 
     # Iterate over the configurations.
-    branch_names = ('branch1', 'branch2')
     for i, config in configs:
         with open(trainlog_path, mode='a') as f:
             f.write('Configuration {}: {}\n'.format(i, config))
@@ -184,11 +183,12 @@ def main():
         os.mkdir(training_path)
 
     # Perform grid search and save the best models.
-    utils.reserve_gpu(args.gpu_id)
+    traindata_dirs = (args.dir1_train, args.dir2_train)
+    valdata_dirs = (args.dir1_val, arg.dir2_val)
     src_shape = (224, 224)
     dest_shape = (224, 224, 3)
-    best_results = grid_search(args.dir1_train, args.dir2_train, args.dir1_val,
-                               args.dir2_val, args.classes, configs,
+    utils.reserve_gpu(args.gpu_id)
+    best_results = grid_search(configs, classes, traindata_dirs, valdata_dirs,
                                training_path, src_shape, dest_shape,
                                args.epochs, args.bsize, args.n_save)
     if args.n_save > 0:
