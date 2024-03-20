@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 
 import utils
 from data_loader import DataLoader
 from parallel_network import ParallelNetwork
 
 
-def test(config, weights_path, testdata_dirs, src_shape, dest_shape,
-         batch_size):
+def test_model(config, weights_path, testdata_dirs, src_shape, dest_shape,
+               batch_size):
     input_names = ('input1', 'input2')
     branch_names = ('branch1', 'branch2')
 
@@ -65,8 +66,8 @@ def main():
     src_shape = (224, 224)
     dst_shape = (224, 224, 3)
     utils.reserve_gpu(args.gpu_id)
-    test(model_config, args.weights, testdata_dirs, src_shape, dst_shape,
-         args.bsize)
+    test_model(model_config, args.weights, testdata_dirs, src_shape, dst_shape,
+               args.bsize)
 
 
 if __name__ == '__main__':

@@ -40,10 +40,11 @@ def train_model(model, ds_train, ds_val, epochs, trainlog_path,
 def build_and_fine_tune(config, weights_path, traindata_dirs, valdata_dirs,
                         tuning_path, src_shape, dest_shape, n_epochs,
                         batch_size):
-    trainlog_path = os.path.sep.join([tuning_path, 'training.log'])
+    trainlog_path = os.path.sep.join([tuning_path, 'fine-tuning.log'])
     checkpoint_dirpath = os.path.sep.join([tuning_path, 'temp'])
     input_names = ('input1', 'input2')
     branch_names = ('branch1', 'branch2')
+    is_binary = config['classes'] == 2
 
     # Get the data.
     dl_train = DataLoader(traindata_dirs[0],
@@ -60,6 +61,10 @@ def build_and_fine_tune(config, weights_path, traindata_dirs, valdata_dirs,
     ds_train = dl_train.load_as_dataset(batch_size)
     ds_val = dl_val.load_as_dataset(batch_size)
 
+    # Write information about the configuration.
+    with open(trainlog_path, mode='a') as f:
+        f.write('Configuration: {}\n'.format(config))
+
     # Build and compile the model.
     network = ParallelNetwork(dest_shape,
                               config['base_models'],
@@ -69,7 +74,7 @@ def build_and_fine_tune(config, weights_path, traindata_dirs, valdata_dirs,
                               dropout=config['dropout'])
     model = network.build()
     model.load_weights(weights_path)
-    if config['classes'] == 2:
+    if is_binary:
         model.compile(optimizer=Adam(learning_rate=config['lr']),
                       loss='binary_crossentropy',
                       metrics=['accuracy'])
@@ -84,7 +89,11 @@ def build_and_fine_tune(config, weights_path, traindata_dirs, valdata_dirs,
                 checkpoint_dirpath)
     for (data, text) in [(ds_train, 'Training data:\n'),
                          (ds_val, 'Validation data:\n')]:
-        utils.write_confusion_matrix(model, data, trainlog_path, text)
+        utils.write_confusion_matrix(model,
+                                     data,
+                                     trainlog_path,
+                                     text,
+                                     binary=is_binary)
 
     # Return validation accuracy and model.
     _, val_accuracy = model.evaluate(ds_val)
@@ -92,7 +101,7 @@ def build_and_fine_tune(config, weights_path, traindata_dirs, valdata_dirs,
 
 
 def save_model(dirpath, metric, model):
-    filename = '{:.3f}.h5'.format(metric)
+    filename = 'fine-tuned_val_acc_{:.3f}.h5'.format(metric)
     filepath = os.path.sep.join([dirpath, filename])
     model.save_weights(filepath)
 
@@ -141,14 +150,11 @@ def main():
         'dropout': args.dropout
     }
 
-    # Name fine tuning directory by starting time.
-    time = datetime.now().strftime('%y-%m-%d-%H%M%S')
-    tuning_path = 'fine_tuning_{}'.format(time)
-    if not os.path.exists(tuning_path):
-        os.mkdir(tuning_path)
+    # Fine tuning directory is the same where the weights are.
+    tuning_path = os.path.dirname(os.path.abspath(args.weights))
 
     traindata_dirs = (args.dir1_train, args.dir2_train)
-    valdata_dirs = (args.dir1_val, arg.dir2_val)
+    valdata_dirs = (args.dir1_val, args.dir2_val)
     src_shape = (224, 224)
     dest_shape = (224, 224, 3)
     utils.reserve_gpu(args.gpu_id)

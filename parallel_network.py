@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-from tensorflow.keras.regularizers import L2
 
 
 class ParallelNetwork:
@@ -12,7 +11,7 @@ class ParallelNetwork:
                  input_names,
                  classes=5,
                  weights=('imagenet', 'imagenet'),
-                 dropout=.2):
+                 dropout=0):
         self.input_shape = input_shape
         self.base_models = base_models
         self.branch_names = branch_names

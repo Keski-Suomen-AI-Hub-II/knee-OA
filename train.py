@@ -48,6 +48,7 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
     checkpoint_dirpath = os.path.sep.join([training_path, 'temp'])
     input_names = ('input1', 'input2')
     branch_names = ('branch1', 'branch2')
+    is_binary = classes == 2
 
     # Initialize data loader for training and evaluation data.
     dl_train = DataLoader(traindata_dirs[0],
@@ -83,7 +84,7 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
         for branch_name in branch_names:
             branch = model.get_layer(branch_name)
             branch.trainable = False
-        if classes == 2:
+        if is_binary:
             model.compile(optimizer=Adam(learning_rate=config['lr']),
                           loss='binary_crossentropy',
                           metrics=['accuracy'])
@@ -98,24 +99,28 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
                     checkpoint_dirpath)
         for (data, text) in [(ds_train, 'Training data:\n'),
                              (ds_val, 'Validation data:\n')]:
-            utils.write_confusion_matrix(model, data, trainlog_path, text)
+            utils.write_confusion_matrix(model,
+                                         data,
+                                         trainlog_path,
+                                         text,
+                                         binary=is_binary)
 
         # If models are to be saved, then:
         #   calculate val accuracy
         #   save the model
         #   make sure that only the n_save best models are saved.
         if n_save > 0:
-            _, val_accuracy = model.evaluate(ds_val)
-            best_results.append((i, val_accuracy, model))
+            val_loss, _ = model.evaluate(ds_val)
+            best_results.append((i, val_loss, model))
             if len(best_results) > n_save:
-                best_results.sort(key=lambda el: el[1], reverse=True)
+                best_results.sort(key=lambda el: el[1])
                 del best_results[-1]
     return best_results
 
 
 def save_models(dirpath, results):
     for i, metric, model in results:
-        filename = '{}_{:.3f}.h5'.format(i, metric)
+        filename = '{}_val_loss_{:.3f}.h5'.format(i, metric)
         filepath = os.path.sep.join([dirpath, filename])
         model.trainable = True
         model.save_weights(filepath)
@@ -176,21 +181,22 @@ def main():
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
 
-    # Name grid search directory by starting time.
+    # Name grid search directory by branches and starting time.
     time = datetime.now().strftime('%y-%m-%d-%H%M%S')
-    training_path = 'training_{}'.format(time)
+    training_path = '{}_{}_{}'.format(args.branch1, args.branch2, time)
     if not os.path.exists(training_path):
         os.mkdir(training_path)
 
     # Perform grid search and save the best models.
     traindata_dirs = (args.dir1_train, args.dir2_train)
-    valdata_dirs = (args.dir1_val, arg.dir2_val)
+    valdata_dirs = (args.dir1_val, args.dir2_val)
     src_shape = (224, 224)
     dest_shape = (224, 224, 3)
     utils.reserve_gpu(args.gpu_id)
-    best_results = grid_search(configs, classes, traindata_dirs, valdata_dirs,
-                               training_path, src_shape, dest_shape,
-                               args.epochs, args.bsize, args.n_save)
+    best_results = grid_search(configs, args.classes, traindata_dirs,
+                               valdata_dirs, training_path, src_shape,
+                               dest_shape, args.epochs, args.bsize,
+                               args.n_save)
     if args.n_save > 0:
         save_models(training_path, best_results)
 

@@ -21,12 +21,18 @@ def reserve_gpu(id):
         set_memory_growth(gpu, True)
 
 
-def write_confusion_matrix(model, data, filepath, desc_text, multiclass=True):
+def write_confusion_matrix(model, data, filepath, desc_text, binary=False):
     """Save confusion matrix to a given filepath."""
     labels = np.concatenate([label for _, label in data], axis=0)
-    labels = tf.math.argmax(labels, axis=-1)
+    if binary:
+        labels = np.concatenate(labels, axis=0)
+    else:
+        labels = tf.math.argmax(labels, axis=-1)
     preds = model.predict(data)
-    preds = tf.math.argmax(preds, axis=-1)
+    if binary:
+        preds = np.concatenate(np.round(preds), axis=0)
+    else:
+        preds = tf.math.argmax(preds, axis=-1)
     cm = confusion_matrix(labels, preds)
     with open(filepath, mode='a') as f:
         f.write(desc_text)
