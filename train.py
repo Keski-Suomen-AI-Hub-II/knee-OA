@@ -22,15 +22,15 @@ def train_model(model, ds_train, ds_val, epochs, trainlog_path,
     checkpoint_path = os.path.sep.join([checkpoint_dirpath, 'checkpoint'])
     cbs_list = [
         callbacks.CSVLogger(trainlog_path, append=True),
-        callbacks.EarlyStopping(monitor='val_loss',
+        callbacks.EarlyStopping(monitor='val_accuracy',
                                 patience=10,
                                 verbose=0,
-                                mode='min'),
+                                mode='max'),
         callbacks.ModelCheckpoint(checkpoint_path,
-                                  monitor='val_loss',
+                                  monitor='val_accuracy',
                                   save_best_only=True,
                                   save_weights_only=True,
-                                  mode='min')
+                                  mode='max')
     ]
     model.fit(x=ds_train,
               validation_data=ds_val,
@@ -71,8 +71,7 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
         with open(trainlog_path, mode='a') as f:
             f.write('Configuration {}: {}\n'.format(i, config))
         tf.keras.backend.clear_session()
-        # Build the model, freeze its branches' weights, and
-        # compile.
+        # Build and compile the model.
         network = ParallelNetwork(dest_shape,
                                   config['base_models'],
                                   branch_names,
@@ -81,9 +80,6 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
                                   weights=config['weights'],
                                   dropout=config['dropout'])
         model = network.build()
-        for branch_name in branch_names:
-            branch = model.get_layer(branch_name)
-            branch.trainable = False
         if is_binary:
             model.compile(optimizer=Adam(learning_rate=config['lr']),
                           loss='binary_crossentropy',
@@ -113,16 +109,15 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
             val_loss, _ = model.evaluate(ds_val)
             best_results.append((i, val_loss, model))
             if len(best_results) > n_save:
-                best_results.sort(key=lambda el: el[1])
+                best_results.sort(key=lambda el: el[1], reverse=True)
                 del best_results[-1]
     return best_results
 
 
 def save_models(dirpath, results):
     for i, metric, model in results:
-        filename = '{}_val_loss_{:.3f}.h5'.format(i, metric)
+        filename = 'config_{}_val_acc_{:.3f}.h5'.format(i, metric)
         filepath = os.path.sep.join([dirpath, filename])
-        model.trainable = True
         model.save_weights(filepath)
 
 
