@@ -7,18 +7,16 @@ class ParallelNetwork:
     def __init__(self,
                  input_shape,
                  base_models,
-                 branch_names,
-                 input_names,
                  classes=5,
                  weights=('imagenet', 'imagenet'),
                  dropout=0):
         self.input_shape = input_shape
         self.base_models = base_models
-        self.branch_names = branch_names
-        self.input_names = input_names
         self.classes = classes
         self.weights = weights
         self.dropout = dropout
+        self.branch_names = ('branch1', 'branch2')
+        self.input_names = ('input1', 'input2')
 
     def build(self):
         """Return the model."""

@@ -12,16 +12,15 @@ class DataLoader:
     def __init__(self,
                  dirname1,
                  dirname2,
-                 input_shape,
-                 input_names,
+                 input_shape=(224, 224),
                  n_classes=5,
                  random_state=None):
         self.dirname1 = dirname1
         self.dirname2 = dirname2
         self.input_shape = input_shape
-        self.input_names = input_names
         self.n_classes = n_classes
         self.random_state = random_state
+        self.input_names = ('input1', 'input2')
 
         # Output will always be RGB, i.e. 3 channels.
         self.output_shape = (self.input_shape[0], self.input_shape[1], 3)

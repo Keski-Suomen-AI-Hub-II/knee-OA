@@ -46,21 +46,17 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
     best_results = []
     trainlog_path = os.path.sep.join([training_path, 'training.log'])
     checkpoint_dirpath = os.path.sep.join([training_path, 'temp'])
-    input_names = ('input1', 'input2')
-    branch_names = ('branch1', 'branch2')
     is_binary = classes == 2
 
     # Initialize data loader for training and evaluation data.
     dl_train = DataLoader(traindata_dirs[0],
                           traindata_dirs[1],
                           src_shape,
-                          input_names,
                           n_classes=classes,
                           random_state=17)
     dl_val = DataLoader(valdata_dirs[0],
                         valdata_dirs[1],
                         src_shape,
-                        input_names,
                         n_classes=classes)
     # Get the datasets.
     ds_train = dl_train.load_as_dataset(batch_size)
@@ -74,8 +70,6 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
         # Build and compile the model.
         network = ParallelNetwork(dest_shape,
                                   config['base_models'],
-                                  branch_names,
-                                  input_names,
                                   classes=classes,
                                   weights=config['weights'],
                                   dropout=config['dropout'])
