@@ -17,36 +17,59 @@ class ParallelNetwork:
         self.dropout = dropout
         self.branch_names = ('branch1', 'branch2')
         self.input_names = ('input1', 'input2')
+        self.augm_names = ('augment1', 'augment2')
 
     def build(self):
         """Return the model."""
-        # Branches are defined as model1 and model2.
-        model1 = self.branch(0)
-        model2 = self.branch(1)
-        # Models model1 and model2 are then used as building blocks
-        # for the final model. The training attribute (not the same as
-        # trainable!) is set to False just in case the base model
-        # has BatchNormalization layer. For more information about that, see
+        # Augmentations.
+        augm1 = self.augment(0)
+        augm2 = self.augment(1)
+        # Convolutional bases.
+        conv1 = self.branch(0)
+        conv2 = self.branch(1)
+        # When conv1 and conv2 are called, the training attribute
+        # (not the same as trainable!) is set to False just in case
+        # the base model has BatchNormalization layer. For more
+        # information about that, see
         # https://www.tensorflow.org/guide/keras/transfer_learning.
+
+        # The first track:
         input1 = layers.Input(self.input_shape, name=self.input_names[0])
-        branch1_output = model1(input1, training=False)
+        augm1_output = augm1(input1)
+        conv1_output = conv1(augm1_output, training=False)
+
+        # The second track:
         input2 = layers.Input(self.input_shape, name=self.input_names[1])
-        branch2_output = model2(input2, training=False)
-        combined = layers.Concatenate(axis=-1)(
-            [branch1_output, branch2_output])
+        augm2_output = augm2(input2)
+        conv2_output = conv2(augm2_output, training=False)
+
+        # Concatenate and classify.
+        combined = layers.Concatenate(axis=-1)([conv1_output, conv2_output])
         x = layers.GlobalAveragePooling2D()(combined)
         x = layers.Dropout(self.dropout)(x)
         output_layer = layers.Dense(self.classes, activation='softmax')(x)
         model = Model(inputs=(input1, input2), outputs=output_layer)
         return model
 
+    def augment(self, branch_id):
+        input_ = layers.Input(self.input_shape)
+        x = layers.RandomFlip(mode='horizontal')(input_)
+        x = layers.RandomTranslation(.1, .1)(x)
+        x = layers.RandomRotation(.1)(x)
+        x = layers.RandomZoom(.2, .2)(x)
+        x = layers.RandomContrast(.1, .1)(x)
+        model_augm = Model(inputs=input_,
+                           outputs=x,
+                           name=self.augm_names[branch_id])
+        return model_augm
+
     def branch(self, branch_id):
         """Return the branch as a model."""
-        input = layers.Input(self.input_shape)
+        input_ = layers.Input(self.input_shape)
         preprocess, base = self.base_model()
-        x = preprocess(input)
+        x = preprocess(input_)
         x = base(x)
-        model_branch = Model(inputs=input,
+        model_branch = Model(inputs=input_,
                              outputs=x,
                              name=self.branch_names[branch_id])
         return model_branch

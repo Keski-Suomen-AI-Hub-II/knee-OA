@@ -83,18 +83,15 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
                     checkpoint_dirpath)
         for (data, text) in [(ds_train, 'Training data:\n'),
                              (ds_val, 'Validation data:\n')]:
-            utils.write_confusion_matrix(model,
-                                         data,
-                                         trainlog_path,
-                                         text)
+            utils.write_confusion_matrix(model, data, trainlog_path, text)
 
         # If models are to be saved, then:
         #   calculate val accuracy
         #   save the model
         #   make sure that only the n_save best models are saved.
         if n_save > 0:
-            _, val_accuracy = model.evaluate(ds_val)
-            best_results.append((i, val_loss, model))
+            _, val_acc = model.evaluate(ds_val)
+            best_results.append((i, val_acc, model))
             if len(best_results) > n_save:
                 best_results.sort(key=lambda el: el[1], reverse=True)
                 del best_results[-1]
@@ -158,7 +155,8 @@ def main():
 
     # Name grid search directory by branches and starting time.
     time = datetime.now().strftime('%y-%m-%d-%H%M%S')
-    training_path = '{}-class_{}_{}'.format(args.classes, args.base_model, time)
+    training_path = '{}-class_{}_{}'.format(args.classes, args.base_model,
+                                            time)
     if not os.path.exists(training_path):
         os.mkdir(training_path)
 
