@@ -22,8 +22,8 @@ def test_model(config, weights_path, testdata_dirs, src_shape, dest_shape,
     ds_test = dl_test.load_as_dataset(batch_size)
 
     # Get the model.
-    network = ParallelNetwork(dest_shape, config['base_models'], branch_names,
-                              input_names, config['classes'])
+    network = ParallelNetwork(dest_shape, config['base_model'],
+                              config['classes'])
     model = network.build()
     model.load_weights(weights_path)
     if config['classes'] == 2:
@@ -33,19 +33,17 @@ def test_model(config, weights_path, testdata_dirs, src_shape, dest_shape,
 
     # Test.
     model.evaluate(ds_test)
+    # TODO: Save metrics and (graphical) confusion matrix.
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('branch1',
-                        help='branch 1 convolutional base',
-                        type=str)
-    parser.add_argument('branch2',
-                        help='branch 2 convolutional base',
+    parser.add_argument('base_model',
+                        help='convolutional base model',
                         type=str)
     parser.add_argument('dir1_test', help='directory 1 of test data', type=str)
     parser.add_argument('dir2_test', help='directory 2 of test data', type=str)
-    parser.add_argument('weights', help='path to weights', type=str)
+    parser.add_argument('trained_weights', help='path to weights', type=str)
 
     parser.add_argument('--gpu_id', help='id of GPU', type=int, default=0)
     parser.add_argument('--classes',
@@ -57,17 +55,14 @@ def main():
 
     # Define model configuration. Dropout is not needed, because the model is
     # only used in inference mode.
-    model_config = {
-        'classes': args.classes,
-        'base_models': (args.branch1, args.branch2),
-    }
+    model_config = {'classes': args.classes, 'base_model': args.base_model}
 
     testdata_dirs = (args.dir1_test, args.dir2_test)
     src_shape = (224, 224)
     dst_shape = (224, 224, 3)
     utils.reserve_gpu(args.gpu_id)
-    test_model(model_config, args.weights, testdata_dirs, src_shape, dst_shape,
-               args.bsize)
+    test_model(model_config, args.trained_weights, testdata_dirs, src_shape,
+               dst_shape, args.bsize)
 
 
 if __name__ == '__main__':

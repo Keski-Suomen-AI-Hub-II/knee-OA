@@ -69,7 +69,7 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
         tf.keras.backend.clear_session()
         # Build and compile the model.
         network = ParallelNetwork(dest_shape,
-                                  config['base_models'],
+                                  config['base_model'],
                                   classes=classes,
                                   weights=config['weights'],
                                   dropout=config['dropout'])
@@ -118,11 +118,8 @@ def save_models(dirpath, results):
 def main():
     # Get the command line arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument('branch1',
-                        help='branch 1 convolutional base',
-                        type=str)
-    parser.add_argument('branch2',
-                        help='branch 2 convolutional base',
+    parser.add_argument('base_model',
+                        help='convolutional base model',
                         type=str)
     parser.add_argument('dir1_train',
                         help='directory 1 of training data',
@@ -146,12 +143,8 @@ def main():
                         help='number of classes',
                         type=int,
                         default=5)
-    parser.add_argument('--weights1',
-                        help='weights of branch 1',
-                        type=str,
-                        default='imagenet')
-    parser.add_argument('--weights2',
-                        help='weights of branch2',
+    parser.add_argument('--weights',
+                        help='weights of the convolutional base',
                         type=str,
                         default='imagenet')
     parser.add_argument('--bsize', help='batch size', type=int, default=8)
@@ -164,8 +157,8 @@ def main():
     # Different configurations consist of several parameter combinations.
     param_grid = {
         'lr': [1e-4, 1e-5],  #[1e-4, 5e-5, 1e-5],
-        'base_models': [(args.branch1, args.branch2)],
-        'weights': [(args.weights1, args.weights2)],
+        'base_model': args.base_model,
+        'weights': args.weights,
         'dropout': [0]  #[0, .1, .2, .3]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))

@@ -6,12 +6,12 @@ class ParallelNetwork:
 
     def __init__(self,
                  input_shape,
-                 base_models,
+                 base_modelname,
                  classes=5,
-                 weights=('imagenet', 'imagenet'),
+                 weights='imagenet',
                  dropout=0):
         self.input_shape = input_shape
-        self.base_models = base_models
+        self.base_modelname = base_modelname
         self.classes = classes
         self.weights = weights
         self.dropout = dropout
@@ -25,7 +25,7 @@ class ParallelNetwork:
         model2 = self.branch(1)
         # Models model1 and model2 are then used as building blocks
         # for the final model. The training attribute (not the same as
-        # trainable!) is set to False just in case any of the base models
+        # trainable!) is set to False just in case the base model
         # has BatchNormalization layer. For more information about that, see
         # https://www.tensorflow.org/guide/keras/transfer_learning.
         input1 = layers.Input(self.input_shape, name=self.input_names[0])
@@ -46,7 +46,7 @@ class ParallelNetwork:
     def branch(self, branch_id):
         """Return the branch as a model."""
         input = layers.Input(self.input_shape)
-        preprocess, base = self.base_model(branch_id)
+        preprocess, base = self.base_model()
         x = preprocess(input)
         x = base(x)
         model_branch = Model(inputs=input,
@@ -54,9 +54,9 @@ class ParallelNetwork:
                              name=self.branch_names[branch_id])
         return model_branch
 
-    def base_model(self, branch_id):
+    def base_model(self):
         """Return the proprocessor and the base model without top layers."""
-        name = self.base_models[branch_id]
+        name = self.base_modelname
         if name == 'vgg-19':
             preprocessor = tf.keras.applications.vgg19.preprocess_input
             base = tf.keras.applications.vgg19.VGG19
@@ -84,6 +84,6 @@ class ParallelNetwork:
         else:
             return None
         base = base(include_top=False,
-                    weights=self.weights[branch_id],
+                    weights=self.weights,
                     input_shape=self.input_shape)
         return preprocessor, base
