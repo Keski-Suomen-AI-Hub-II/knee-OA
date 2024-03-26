@@ -41,12 +41,8 @@ class DataLoader:
         filepaths = self.filepaths()
         for filepath1 in filepaths:
             classname = int(filepath1.split(os.sep)[-2])
-            if self.n_classes == 2:
-                label = np.zeros(1)
-                label[0] = float(classname)
-            else:
-                label = np.zeros(self.n_classes)
-                label[classname] = 1.0
+            label = np.zeros(self.n_classes)
+            label[classname] = 1.0
             label.astype('float32')
             filepath2 = filepath1.replace(self.dirname1, self.dirname2, 1)
             img1 = imread(filepath1).astype('float32')
@@ -60,10 +56,6 @@ class DataLoader:
             }, label)
 
     def load_as_dataset(self, batch_size):
-        if self.n_classes == 2:
-            label_shape = 1
-        else:
-            label_shape = self.n_classes
         ds = tf.data.Dataset.from_generator(
             self.gen_data,
             output_signature=({
@@ -75,7 +67,7 @@ class DataLoader:
                 tf.TensorSpec(shape=self.output_shape,
                               dtype=tf.float32,
                               name=None)
-            }, tf.TensorSpec(shape=(label_shape, ),
+            }, tf.TensorSpec(shape=(self.n_classes, ),
                              dtype=tf.float32,
                              name=None))).batch(batch_size)
         return ds

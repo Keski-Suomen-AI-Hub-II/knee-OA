@@ -46,7 +46,6 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
     best_results = []
     trainlog_path = os.path.sep.join([training_path, 'training.log'])
     checkpoint_dirpath = os.path.sep.join([training_path, 'temp'])
-    is_binary = classes == 2
 
     # Initialize data loader for training and evaluation data.
     dl_train = DataLoader(traindata_dirs[0],
@@ -74,14 +73,9 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
                                   weights=config['weights'],
                                   dropout=config['dropout'])
         model = network.build()
-        if is_binary:
-            model.compile(optimizer=Adam(learning_rate=config['lr']),
-                          loss='binary_crossentropy',
-                          metrics=['accuracy'])
-        else:
-            model.compile(optimizer=Adam(learning_rate=config['lr']),
-                          loss='categorical_crossentropy',
-                          metrics=['accuracy'])
+        model.compile(optimizer=Adam(learning_rate=config['lr']),
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
 
         # Train the model. With the best weights, print confusion matrix for
         # the training and validation data.
@@ -92,15 +86,14 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
             utils.write_confusion_matrix(model,
                                          data,
                                          trainlog_path,
-                                         text,
-                                         binary=is_binary)
+                                         text)
 
         # If models are to be saved, then:
         #   calculate val accuracy
         #   save the model
         #   make sure that only the n_save best models are saved.
         if n_save > 0:
-            val_loss, _ = model.evaluate(ds_val)
+            _, val_accuracy = model.evaluate(ds_val)
             best_results.append((i, val_loss, model))
             if len(best_results) > n_save:
                 best_results.sort(key=lambda el: el[1], reverse=True)
@@ -156,16 +149,16 @@ def main():
 
     # Different configurations consist of several parameter combinations.
     param_grid = {
-        'lr': [1e-4, 1e-5],  #[1e-4, 5e-5, 1e-5],
-        'base_model': args.base_model,
-        'weights': args.weights,
+        'base_model': [args.base_model],
+        'weights': [args.weights],
+        'lr': [1e-5, 1e-6],  #[1e-4, 5e-5, 1e-5],
         'dropout': [0]  #[0, .1, .2, .3]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
 
     # Name grid search directory by branches and starting time.
     time = datetime.now().strftime('%y-%m-%d-%H%M%S')
-    training_path = '{}_{}_{}'.format(args.branch1, args.branch2, time)
+    training_path = '{}-class_{}_{}'.format(args.classes, args.base_model, time)
     if not os.path.exists(training_path):
         os.mkdir(training_path)
 

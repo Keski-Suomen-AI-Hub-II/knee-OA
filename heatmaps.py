@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO: heatmaps for binary classification.
-
 
 def generate_heatmap(model, img1_path, img2_path, img_size, num_of_img, alpha):
     """Return the prediction and heatmap."""
@@ -22,7 +20,7 @@ def generate_heatmap(model, img1_path, img2_path, img_size, num_of_img, alpha):
         model.get_layer('branch2').inputs,
         model.get_layer('branch2').output)
 
-    # The classication end as a model.
+    # The classifier head as a model.
     conv_output_shape = model.get_layer('branch1').output_shape[1:]
     classifier_input1 = tf.keras.Input(shape=conv_output_shape)
     classifier_input2 = tf.keras.Input(shape=conv_output_shape)

@@ -36,10 +36,7 @@ class ParallelNetwork:
             [branch1_output, branch2_output])
         x = layers.GlobalAveragePooling2D()(combined)
         x = layers.Dropout(self.dropout)(x)
-        if self.classes == 2:
-            output_layer = layers.Dense(1, activation='sigmoid')(x)
-        else:
-            output_layer = layers.Dense(self.classes, activation='softmax')(x)
+        output_layer = layers.Dense(self.classes, activation='softmax')(x)
         model = Model(inputs=(input1, input2), outputs=output_layer)
         return model
 
