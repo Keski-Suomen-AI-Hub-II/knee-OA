@@ -2,10 +2,11 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from skimage.exposure import rescale_intensity
+from skimage.exposure import equalize_hist
 from skimage.feature import match_template
 from skimage.io import imread, imsave
 from skimage.transform import resize
+from skimage.util import img_as_ubyte
 from sklearn.metrics import confusion_matrix
 from tensorflow.config import list_physical_devices, set_visible_devices
 from tensorflow.config.experimental import set_memory_growth
@@ -38,8 +39,8 @@ def write_confusion_matrix(model, data, filepath, desc_text):
         f.write('\n')
 
 
-def enhance_images(src_path, dst_path):
-    """Perform contrast stretching on all the images inside src_path."""
+def enhance_contrast(src_path, dst_path):
+    """Perform histogram equalization on all the images inside src_path."""
     for src_dirpath, _, filenames in os.walk(src_path):
         dst_dirpath = src_dirpath.replace(src_path, dst_path, 1)
         os.makedirs(dst_dirpath, exist_ok=True)
@@ -47,7 +48,8 @@ def enhance_images(src_path, dst_path):
             src_filepath = os.path.sep.join([src_dirpath, filename])
             dst_filepath = os.path.sep.join([dst_dirpath, filename])
             img = imread(src_filepath)
-            img_enh = rescale_intensity(img)
+            img_enh = equalize_hist(img)
+            img_enh = img_as_ubyte(img_enh)  # Convert to 8-bit ints.
             imsave(dst_filepath, img_enh)
 
 
@@ -98,7 +100,8 @@ def crop_images(datapath, cropped_datapath, templates_path, shape_to_save):
             cropped = extract_eminentia(filepath, templates, crop_before=True)
             cropped_resized = resize(cropped,
                                      shape_to_save,
-                                     preserve_range=True).astype('uint8')
+                                     preserve_range=True)
+            cropped_resized = img_as_ubyte(cropped_resized)
             imsave(cropped_filepath, cropped_resized)
 
 
@@ -108,7 +111,7 @@ def main():
     cropped_datapath = 'data_autocropped'
     shape_to_save = (224, 224)
     crop_images(datapath, cropped_datapath, templates_path, shape_to_save)
-    enhance_images(cropped_datapath, 'hcontr_data_autocropped')
+    enhance_contrast(cropped_datapath, 'hcontr_data_autocropped')
 
 
 if __name__ == '__main__':
