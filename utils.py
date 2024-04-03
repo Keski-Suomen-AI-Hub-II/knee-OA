@@ -1,4 +1,6 @@
 import os
+import random as rand
+import shutil
 
 import numpy as np
 import tensorflow as tf
@@ -62,7 +64,7 @@ def read_templates(templates_path):
     return templates
 
 
-def extract_eminentia(path_to_img, eminentia_templates, crop_before=False):
+def extract_eminentia(path_to_img, eminentia_templates, crop_before=True):
     """"Return the best matching eminentia part."""
     matches = []
     img = imread(path_to_img)
@@ -103,6 +105,16 @@ def crop_images(datapath, cropped_datapath, templates_path, shape_to_save):
                                      preserve_range=True)
             cropped_resized = img_as_ubyte(cropped_resized)
             imsave(cropped_filepath, cropped_resized)
+
+
+def copy_random_files(src_path, dst_path, n_files):
+    """Copy random files to dst_path."""
+    all_fnames = os.listdir(src_path)
+    rand_fnames = rand.choices(all_fnames, k=n_files)
+    os.makedirs(dst_path, exist_ok=True)
+    for fname in rand_fnames:
+        fpath = os.path.sep.join([src_path, fname])
+        shutil.copy(fpath, dst_path)
 
 
 def main():
