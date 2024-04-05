@@ -1,14 +1,12 @@
+#!/usr/bin/env python3
+
 import os
 import random as rand
 import shutil
 
 import numpy as np
+import skimage as ski
 import tensorflow as tf
-from skimage.exposure import equalize_hist
-from skimage.feature import match_template
-from skimage.io import imread, imsave
-from skimage.transform import resize
-from skimage.util import img_as_ubyte
 from sklearn.metrics import confusion_matrix
 from tensorflow.config import list_physical_devices, set_visible_devices
 from tensorflow.config.experimental import set_memory_growth
@@ -49,17 +47,20 @@ def enhance_contrast(src_path, dst_path):
         for filename in filenames:
             src_filepath = os.path.sep.join([src_dirpath, filename])
             dst_filepath = os.path.sep.join([dst_dirpath, filename])
-            img = imread(src_filepath)
-            img_enh = equalize_hist(img)
-            img_enh = img_as_ubyte(img_enh)  # Convert to 8-bit ints.
-            imsave(dst_filepath, img_enh)
+            img = ski.io.imread(src_filepath)
+            img_enh = ski.exposure.equalize_hist(img)
+            img_enh = ski.util.img_as_ubyte(img_enh)  # Convert to 8-bit ints.
+            ski.io.imsave(dst_filepath, img_enh)
 
 
 def read_templates(templates_path):
     """Return a list of templates."""
     templates = []
     for name in os.listdir(templates_path):
-        templ = imread(os.path.sep.join([templates_path, name]))
+        templ = ski.io.imread(os.path.sep.join([templates_path, name]))
+        # Only consider one channel in case there are multiple channels.
+        if len(templ.shape) > 2:
+            templ = templ[:, :, 0]
         templates.append(templ)
     return templates
 
@@ -67,7 +68,7 @@ def read_templates(templates_path):
 def extract_eminentia(path_to_img, eminentia_templates, crop_before=True):
     """"Return the best matching eminentia part."""
     matches = []
-    img = imread(path_to_img)
+    img = ski.io.imread(path_to_img)
 
     # Only consider the center of the image.
     if crop_before:
@@ -77,11 +78,11 @@ def extract_eminentia(path_to_img, eminentia_templates, crop_before=True):
 
     # Find the best matching template.
     for template in eminentia_templates:
-        match = match_template(img, template)
+        match = ski.feature.match_template(img, template)
         matches.append(match.max())
     index = np.argmax(matches)
     em = eminentia_templates[index]
-    res = match_template(img, em)
+    res = ski.feature.match_template(img, em)
 
     # Extract and return.
     x, y = np.unravel_index(np.argmax(res), res.shape)
@@ -99,12 +100,12 @@ def crop_images(datapath, cropped_datapath, templates_path, shape_to_save):
         for filename in filenames:
             filepath = os.path.sep.join([dirpath, filename])
             cropped_filepath = os.path.sep.join([cropped_dirpath, filename])
-            cropped = extract_eminentia(filepath, templates, crop_before=True)
-            cropped_resized = resize(cropped,
-                                     shape_to_save,
-                                     preserve_range=True)
-            cropped_resized = img_as_ubyte(cropped_resized)
-            imsave(cropped_filepath, cropped_resized)
+            cropped = extract_eminentia(filepath, templates)
+            cropped_resized = ski.transform.resize(cropped,
+                                                   shape_to_save,
+                                                   preserve_range=True)
+            cropped_resized = cropped_resized.astype('uint8')
+            ski.io.imsave(cropped_filepath, cropped_resized)
 
 
 def copy_random_files(src_path, dst_path, n_files):
@@ -118,12 +119,13 @@ def copy_random_files(src_path, dst_path, n_files):
 
 
 def main():
-    templates_path = 'data_eminentias'
-    datapath = 'data'
-    cropped_datapath = 'data_autocropped'
+    templates_path = '../eminentia/eminentia_samples/output'
+    datapath = '../eminentia/dataset_i/data'
+    cropped_datapath = '../eminentia/autocropped_from_hist_eq_data'
+    cropped_datapath_enh = '../eminentia/dataset_i/autocropped'
     shape_to_save = (224, 224)
     crop_images(datapath, cropped_datapath, templates_path, shape_to_save)
-    enhance_contrast(cropped_datapath, 'hcontr_data_autocropped')
+    enhance_contrast(cropped_datapath, cropped_datapath_enh)
 
 
 if __name__ == '__main__':
