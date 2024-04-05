@@ -77,7 +77,10 @@ class ParallelNetwork:
     def base_model(self):
         """Return the proprocessor and the base model without top layers."""
         name = self.base_modelname
-        if name == 'vgg-19':
+        if name == 'vgg-16':
+            preprocessor = tf.keras.applications.vgg16.preprocess_input
+            base = tf.keras.applications.vgg16.VGG16
+        elif name == 'vgg-19':
             preprocessor = tf.keras.applications.vgg19.preprocess_input
             base = tf.keras.applications.vgg19.VGG19
         elif name == 'inception_v3':
@@ -92,15 +95,15 @@ class ParallelNetwork:
         elif name == 'densenet-169':
             preprocessor = tf.keras.applications.densenet.preprocess_input
             base = tf.keras.applications.densenet.DenseNet169
-        elif name == 'densenet-201':
-            preprocessor = tf.keras.applications.densenet.preprocess_input
-            base = tf.keras.applications.densenet.DenseNet201
+        elif name == 'mobilenet_v2':
+            preprocessor = tf.keras.applications.mobilenet_v2.preprocess_input
+            base = tf.keras.applications.mobilenet_v2.MobileNetV2
         elif name == 'resnet-50':
-            preprocessor = tf.keras.applications.resnet50.preprocess_input
-            base = tf.keras.applications.resnet50.ResNet50
-        elif name == 'regnetx-002':
-            preprocessor = tf.keras.applications.regnet.preprocess_input
-            base = tf.keras.applications.regnet.RegNetX002
+            preprocessor = tf.keras.applications.resnet.preprocess_input
+            base = tf.keras.applications.resnet.ResNet50
+        elif name == 'resnet-101':
+            preprocessor = tf.keras.applications.resnet.preprocess_input
+            base = tf.keras.applications.resnet.ResNet101
         else:
             return None
         base = base(include_top=False,
