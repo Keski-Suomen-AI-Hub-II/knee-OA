@@ -141,7 +141,7 @@ def main():
     parser.add_argument('--epochs',
                         help='maximum number of epochs',
                         type=int,
-                        default=100)
+                        default=200)
     args = parser.parse_args()
 
     # Different configurations consist of several parameter combinations.

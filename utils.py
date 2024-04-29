@@ -53,59 +53,20 @@ def enhance_contrast(src_path, dst_path):
             ski.io.imsave(dst_filepath, img_enh)
 
 
-def read_templates(templates_path):
-    """Return a list of templates."""
-    templates = []
-    for name in os.listdir(templates_path):
-        templ = ski.io.imread(os.path.sep.join([templates_path, name]))
-        # Only consider one channel in case there are multiple channels.
-        if len(templ.shape) > 2:
-            templ = templ[:, :, 0]
-        templates.append(templ)
-    return templates
-
-
-def extract_eminentia(path_to_img, eminentia_templates, crop_before=True):
-    """"Return the best matching eminentia part."""
-    matches = []
-    img = ski.io.imread(path_to_img)
-
-    # Only consider the center of the image.
-    if crop_before:
-        y_part = int(img.shape[0] / 4)
-        x_part = int(img.shape[1] / 4)
-        img = img[y_part:3 * y_part, x_part:3 * x_part]
-
-    # Find the best matching template.
-    for template in eminentia_templates:
-        match = ski.feature.match_template(img, template)
-        matches.append(match.max())
-    index = np.argmax(matches)
-    em = eminentia_templates[index]
-    res = ski.feature.match_template(img, em)
-
-    # Extract and return.
-    x, y = np.unravel_index(np.argmax(res), res.shape)
-    em_width, em_height = em.shape
-    extracted = img[y:y + em_height, x:x + em_width]
-    return extracted
-
-
-def crop_images(datapath, cropped_datapath, templates_path, shape_to_save):
-    """Crop images, then resize and save the cropped."""
-    templates = read_templates(templates_path)
-    for dirpath, _, filenames in os.walk(datapath):
-        cropped_dirpath = dirpath.replace(datapath, cropped_datapath, 1)
-        os.makedirs(cropped_dirpath, exist_ok=True)
+def resize_imgs(src_path, dst_path, shape_to_save):
+    """Save resized images in dst_path."""
+    for src_dirpath, _, filenames in os.walk(src_path):
+        dst_dirpath = src_dirpath.replace(src_path, dst_path, 1)
+        os.makedirs(dst_dirpath, exist_ok=True)
         for filename in filenames:
-            filepath = os.path.sep.join([dirpath, filename])
-            cropped_filepath = os.path.sep.join([cropped_dirpath, filename])
-            cropped = extract_eminentia(filepath, templates)
-            cropped_resized = ski.transform.resize(cropped,
-                                                   shape_to_save,
-                                                   preserve_range=True)
-            cropped_resized = cropped_resized.astype('uint8')
-            ski.io.imsave(cropped_filepath, cropped_resized)
+            src_filepath = os.path.sep.join([src_dirpath, filename])
+            dst_filepath = os.path.sep.join([dst_dirpath, filename])
+            img = ski.io.imread(src_filepath)
+            img_resized = ski.transform.resize(img,
+                                               shape_to_save,
+                                               preserve_range=True)
+            img_resized = img_resized.astype('uint8')
+            ski.io.imsave(dst_filepath, img_resized)
 
 
 def copy_random_files(src_path, dst_path, n_files):
