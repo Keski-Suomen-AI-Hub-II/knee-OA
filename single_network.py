@@ -26,7 +26,7 @@ class SingleNetwork:
         # Convolutional layers.
         preprocess, conv = self.base_model()
         x = preprocess(x)
-        x = conv(x)
+        x = conv(x, training=False)
 
         # Pool, classify, and return the model.
         x = layers.GlobalAveragePooling2D()(x)

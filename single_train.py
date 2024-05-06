@@ -2,18 +2,15 @@
 
 import argparse
 import os
-import shutil
-import sys
 from datetime import datetime
 
-import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import ParameterGrid
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 
 import utils
-from parallel_network import SingleNetwork
+from single_network import SingleNetwork
 
 
 def grid_search(configs, classes, traindata_dir, valdata_dir, training_path,
@@ -48,11 +45,11 @@ def grid_search(configs, classes, traindata_dir, valdata_dir, training_path,
             f.write('Configuration {}: {}\n'.format(i, config))
         tf.keras.backend.clear_session()
         # Build and compile the model.
-        network = ParallelNetwork(dest_shape,
-                                  config['base_model'],
-                                  classes=classes,
-                                  weights=config['weights'],
-                                  dropout=config['dropout'])
+        network = SingleNetwork(dest_shape,
+                                config['base_model'],
+                                classes=classes,
+                                weights=config['weights'],
+                                dropout=config['dropout'])
         model = network.build()
         model.compile(optimizer=Adam(learning_rate=config['lr']),
                       loss='categorical_crossentropy',
@@ -119,7 +116,7 @@ def main():
     param_grid = {
         'base_model': [args.base_model],
         'weights': [args.weights],
-        'lr': [1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
+        'lr': [1e-4, 5e-5, 1e-5, 5e-6, 1e-6],
         'dropout': [0, .1, .2, .3]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
@@ -133,7 +130,7 @@ def main():
 
     # Perform grid search and save the best models.
     traindata_dir = args.dir_train
-    valdata_dirs = args.dir_val
+    valdata_dir = args.dir_val
     src_shape = (224, 224)
     dest_shape = (224, 224, 3)
     utils.reserve_gpu(args.gpu_id)
@@ -143,3 +140,7 @@ def main():
                                args.n_save)
     if args.n_save > 0:
         save_models(training_path, best_results)
+
+
+if __name__ == '__main__':
+    main()

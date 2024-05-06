@@ -2,11 +2,8 @@
 
 import argparse
 import os
-import shutil
-import sys
 from datetime import datetime
 
-import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import ParameterGrid
 from tensorflow.keras.optimizers import Adam
@@ -123,7 +120,7 @@ def main():
     param_grid = {
         'base_model': [args.base_model],
         'weights': [args.weights],
-        'lr': [1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
+        'lr': [1e-4, 5e-5, 1e-5, 5e-6, 1e-6],
         'dropout': [0, .1, .2, .3]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
