@@ -9,57 +9,38 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import ParameterGrid
-from tensorflow.keras import callbacks
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing import image_dataset_from_directory
 
 import utils
-from data_loader import DataLoader
-from parallel_network import ParallelNetwork
+from parallel_network import SingleNetwork
 
 
-def train_model(model, ds_train, ds_val, epochs, trainlog_path,
-                checkpoint_dirpath):
-    checkpoint_path = os.path.sep.join([checkpoint_dirpath, 'checkpoint'])
-    cbs_list = [
-        callbacks.CSVLogger(trainlog_path, append=True),
-        callbacks.EarlyStopping(monitor='val_accuracy',
-                                patience=10,
-                                verbose=0,
-                                mode='max'),
-        callbacks.ModelCheckpoint(checkpoint_path,
-                                  monitor='val_accuracy',
-                                  save_best_only=True,
-                                  save_weights_only=True,
-                                  mode='max')
-    ]
-    model.fit(x=ds_train,
-              validation_data=ds_val,
-              epochs=epochs,
-              verbose=0,
-              callbacks=cbs_list)
-    model.load_weights(checkpoint_path)
-    shutil.rmtree(checkpoint_dirpath, ignore_errors=True)
-
-
-def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
+def grid_search(configs, classes, traindata_dir, valdata_dir, training_path,
                 src_shape, dest_shape, n_epochs, batch_size, n_save):
     best_results = []
     trainlog_path = os.path.sep.join([training_path, 'training.log'])
     checkpoint_dirpath = os.path.sep.join([training_path, 'temp'])
 
-    # Initialize data loader for training and evaluation data.
-    dl_train = DataLoader(traindata_dirs[0],
-                          traindata_dirs[1],
-                          src_shape,
-                          n_classes=classes,
-                          random_state=17)
-    dl_val = DataLoader(valdata_dirs[0],
-                        valdata_dirs[1],
-                        src_shape,
-                        n_classes=classes)
     # Get the datasets.
-    ds_train = dl_train.load_as_dataset(batch_size)
-    ds_val = dl_val.load_as_dataset(batch_size)
+    if len(dest_shape) < 3:
+        color_mode = 'grayscale'
+    else:
+        color_mode = 'rgb'
+    ds_train = image_dataset_from_directory(traindata_dir,
+                                            label_mode='categorical',
+                                            color_mode=color_mode,
+                                            batch_size=batch_size,
+                                            image_size=(dest_shape[0],
+                                                        dest_shape[1]),
+                                            shuffle=True)
+    ds_val = image_dataset_from_directory(valdata_dir,
+                                          label_mode='categorical',
+                                          color_mode=color_mode,
+                                          batch_size=batch_size,
+                                          image_size=(dest_shape[0],
+                                                      dest_shape[1]),
+                                          shuffle=False)
 
     # Iterate over the configurations.
     for i, config in configs:
@@ -79,8 +60,8 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
 
         # Train the model. With the best weights, print confusion matrix for
         # the training and validation data.
-        train_model(model, ds_train, ds_val, n_epochs, trainlog_path,
-                    checkpoint_dirpath)
+        utils.train_model(model, ds_train, ds_val, n_epochs, trainlog_path,
+                          checkpoint_dirpath)
         for (data, text) in [(ds_train, 'Training data:\n'),
                              (ds_val, 'Validation data:\n')]:
             utils.write_confusion_matrix(model, data, trainlog_path, text)
@@ -111,18 +92,8 @@ def main():
     parser.add_argument('base_model',
                         help='convolutional base model',
                         type=str)
-    parser.add_argument('dir1_train',
-                        help='directory 1 of training data',
-                        type=str)
-    parser.add_argument('dir2_train',
-                        help='directory 2 of training data',
-                        type=str)
-    parser.add_argument('dir1_val',
-                        help='directory 1 of validation data',
-                        type=str)
-    parser.add_argument('dir2_val',
-                        help='directory 2 of validation data',
-                        type=str)
+    parser.add_argument('dir_train', help='training data directory', type=str)
+    parser.add_argument('dir_val', help='validation data directory', type=str)
 
     parser.add_argument('--gpu_id', help='id of GPU', type=int, default=0)
     parser.add_argument('--n_save',
@@ -137,7 +108,7 @@ def main():
                         help='weights of the convolutional base',
                         type=str,
                         default='imagenet')
-    parser.add_argument('--bsize', help='batch size', type=int, default=8)
+    parser.add_argument('--bsize', help='batch size', type=int, default=16)
     parser.add_argument('--epochs',
                         help='maximum number of epochs',
                         type=int,
@@ -155,24 +126,20 @@ def main():
 
     # Name grid search directory by branches and starting time.
     time = datetime.now().strftime('%y-%m-%d-%H%M%S')
-    training_path = '{}-class_{}_{}'.format(args.classes, args.base_model,
-                                            time)
+    training_path = 'single-{}-class_{}_{}'.format(args.classes,
+                                                   args.base_model, time)
     if not os.path.exists(training_path):
         os.mkdir(training_path)
 
     # Perform grid search and save the best models.
-    traindata_dirs = (args.dir1_train, args.dir2_train)
-    valdata_dirs = (args.dir1_val, args.dir2_val)
+    traindata_dir = args.dir_train
+    valdata_dirs = args.dir_val
     src_shape = (224, 224)
     dest_shape = (224, 224, 3)
     utils.reserve_gpu(args.gpu_id)
-    best_results = grid_search(configs, args.classes, traindata_dirs,
-                               valdata_dirs, training_path, src_shape,
+    best_results = grid_search(configs, args.classes, traindata_dir,
+                               valdata_dir, training_path, src_shape,
                                dest_shape, args.epochs, args.bsize,
                                args.n_save)
     if args.n_save > 0:
         save_models(training_path, best_results)
-
-
-if __name__ == '__main__':
-    main()

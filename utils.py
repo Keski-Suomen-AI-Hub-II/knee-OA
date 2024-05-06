@@ -10,6 +10,7 @@ import tensorflow as tf
 from sklearn.metrics import confusion_matrix
 from tensorflow.config import list_physical_devices, set_visible_devices
 from tensorflow.config.experimental import set_memory_growth
+from tensorflow.keras import callbacks
 
 
 def reserve_gpu(id):
@@ -89,6 +90,31 @@ def replace_from_filenames(dirpath, old, new):
         fname_new = fname.replace(old, new)
         fpath_new = os.path.sep.join([dirpath, fname_new])
         os.rename(fpath, fpath_new)
+
+
+def train_model(model, ds_train, ds_val, epochs, trainlog_path,
+                checkpoint_dirpath):
+    """Train and write trainlog."""
+    checkpoint_path = os.path.sep.join([checkpoint_dirpath, 'checkpoint'])
+    cbs_list = [
+        callbacks.CSVLogger(trainlog_path, append=True),
+        callbacks.EarlyStopping(monitor='val_accuracy',
+                                patience=10,
+                                verbose=0,
+                                mode='max'),
+        callbacks.ModelCheckpoint(checkpoint_path,
+                                  monitor='val_accuracy',
+                                  save_best_only=True,
+                                  save_weights_only=True,
+                                  mode='max')
+    ]
+    model.fit(x=ds_train,
+              validation_data=ds_val,
+              epochs=epochs,
+              verbose=0,
+              callbacks=cbs_list)
+    model.load_weights(checkpoint_path)
+    shutil.rmtree(checkpoint_dirpath, ignore_errors=True)
 
 
 def main():
