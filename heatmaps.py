@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import tensorflow as tf
+from matplotlib import colormaps
+from skimage.color import gray2rgb
+from skimage.io import imread
+
 
 def generate_heatmap(model, img1_path, img2_path, img_size, num_of_img, alpha):
     """Return the prediction and heatmap."""
@@ -85,7 +93,7 @@ def save_heatmaps(model, img1_path, img2_path, img_size, heatmaps_path,
     plt.close(fig)
 
 
-def heatmaps_from_dirs(model, src_dir1, src_dir2, img_size, save_dir, alpha):
+def heatmaps_from_dirs(model, src_dir1, src_dir2, img_size, dst_dir, alpha):
     """Generate heatmaps from the images inside src_dir1 and src_dir2."""
     for classname in os.listdir(src_dir1):
         src_classpath1 = os.path.sep.join([src_dir1, classname])
