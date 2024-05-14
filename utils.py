@@ -7,7 +7,7 @@ import shutil
 import numpy as np
 import skimage as ski
 import tensorflow as tf
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow.config import list_physical_devices, set_visible_devices
 from tensorflow.config.experimental import set_memory_growth
 from tensorflow.keras import callbacks
@@ -23,12 +23,29 @@ def reserve_gpu(id):
         set_memory_growth(gpu, True)
 
 
-def write_confusion_matrix(model, data, filepath, desc_text):
-    """Save confusion matrix to a given filepath."""
+def write_metrics(model, data, filepath):
+    """Write classification metrics to a given filepath."""
+    # Convert from one-hot encoding.
     labels = np.concatenate([label for _, label in data], axis=0)
     labels = tf.math.argmax(labels, axis=-1)
     preds = model.predict(data)
     preds = tf.math.argmax(preds, axis=-1)
+
+    # Calculate and save the metrics.
+    report = classification_report(labels, preds)
+    with open(filepath, mode='a') as f:
+        f.write(report)
+
+
+def write_confusion_matrix(model, data, filepath, desc_text):
+    """Save confusion matrix to a given filepath."""
+    # Convert from one-hot encoding.
+    labels = np.concatenate([label for _, label in data], axis=0)
+    labels = tf.math.argmax(labels, axis=-1)
+    preds = model.predict(data)
+    preds = tf.math.argmax(preds, axis=-1)
+
+    # Calculate and save the confusion matrix.
     cm = confusion_matrix(labels, preds)
     with open(filepath, mode='a') as f:
         f.write(desc_text)
@@ -38,6 +55,20 @@ def write_confusion_matrix(model, data, filepath, desc_text):
             class_acc = cm[i, i] / sum(cm[i])
             f.write('Class {}: {:.6f}\n'.format(i, class_acc))
         f.write('\n')
+
+
+def flip_images(src_path, dst_path, substr='L'):
+    """Flip the images with the given substring in name."""
+    for src_dirpath, _, filenames in os.walk(src_path):
+        dst_dirpath = src_dirpath.replace(src_path, dst_path, 1)
+        os.makedirs(dst_dirpath, exist_ok=True)
+        for filename in filenames:
+            if filename.count(substr) > 0:
+                src_filepath = os.path.sep.join([src_dirpath, filename])
+                dst_filepath = os.path.sep.join([dst_dirpath, filename])
+                img = ski.io.imread(src_filepath)
+                flipped = np.fliplr(img)
+                ski.io.imsave(dst_filepath, flipped)
 
 
 def enhance_contrast(src_path, dst_path):
