@@ -73,8 +73,8 @@ class SingleNetwork:
         return preprocessor, base
 
     def augment(self, input_):
-        x = layers.RandomFlip(mode='horizontal')(input_)
-        x = layers.RandomTranslation(.1, .1)(x)
+        #x = layers.RandomFlip(mode='horizontal')(input_)
+        x = layers.RandomTranslation(.1, .1)(input_)
         x = layers.RandomRotation(.1)(x)
         x = layers.RandomZoom(.2, .2)(x)
         x = layers.RandomContrast(.1, .1)(x)

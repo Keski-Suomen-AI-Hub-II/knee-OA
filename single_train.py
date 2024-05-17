@@ -115,12 +115,12 @@ def main():
     param_grid = {
         'base_model': [args.base_model],
         'weights': [args.weights],
-        'lr': [1e-4, 5e-5, 1e-5, 5e-6, 1e-6],
-        'dropout': [0, .1, .2, .3]
+        'lr': [1e-4, 1e-5, 1e-6],
+        'dropout': [0, .3]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
 
-    # Name grid search directory by branches and starting time.
+    # Name grid search directory by convnet and starting time.
     time = datetime.now().strftime('%y-%m-%d-%H%M%S')
     training_path = 'single-{}-class_{}_{}'.format(args.classes,
                                                    args.base_model, time)
