@@ -101,9 +101,6 @@ class ParallelNetwork:
         elif name == 'resnet-50':
             preprocessor = tf.keras.applications.resnet.preprocess_input
             base = tf.keras.applications.resnet.ResNet50
-        elif name == 'resnet-101':
-            preprocessor = tf.keras.applications.resnet.preprocess_input
-            base = tf.keras.applications.resnet.ResNet101
         else:
             return None
         base = base(include_top=False,

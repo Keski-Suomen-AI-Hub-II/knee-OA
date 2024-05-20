@@ -7,7 +7,7 @@ import shutil
 import numpy as np
 import skimage as ski
 import tensorflow as tf
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn import metrics
 from tensorflow.config import list_physical_devices, set_visible_devices
 from tensorflow.config.experimental import set_memory_growth
 from tensorflow.keras import callbacks
@@ -23,30 +23,33 @@ def reserve_gpu(id):
         set_memory_growth(gpu, True)
 
 
-def write_metrics(model, data, filepath):
-    """Write classification metrics to a given filepath."""
-    # Convert from one-hot encoding.
+def convert_from_1hot(model, data):
+    """Convert labels and preds from one-hot encoding."""
     labels = np.concatenate([label for _, label in data], axis=0)
     labels = tf.math.argmax(labels, axis=-1)
     preds = model.predict(data)
     preds = tf.math.argmax(preds, axis=-1)
+    return labels, preds
+
+
+def write_metrics(model, data, filepath):
+    """Write classification metrics to a given filepath."""
+    # Get the labels and preds.
+    labels, preds = convert_from_1hot(model, data)
 
     # Calculate and save the metrics.
-    report = classification_report(labels, preds)
+    report = metrics.classification_report(labels, preds)
     with open(filepath, mode='a') as f:
         f.write(report)
 
 
 def write_confusion_matrix(model, data, filepath, desc_text):
     """Save confusion matrix to a given filepath."""
-    # Convert from one-hot encoding.
-    labels = np.concatenate([label for _, label in data], axis=0)
-    labels = tf.math.argmax(labels, axis=-1)
-    preds = model.predict(data)
-    preds = tf.math.argmax(preds, axis=-1)
+    # Get the labels and preds.
+    labels, preds = convert_from_1hot(model, data)
 
     # Calculate and save the confusion matrix.
-    cm = confusion_matrix(labels, preds)
+    cm = metrics.confusion_matrix(labels, preds)
     with open(filepath, mode='a') as f:
         f.write(desc_text)
         f.write(str(cm))
@@ -55,6 +58,13 @@ def write_confusion_matrix(model, data, filepath, desc_text):
             class_acc = cm[i, i] / sum(cm[i])
             f.write('Class {}: {:.6f}\n'.format(i, class_acc))
         f.write('\n')
+
+
+def visualize_confusion_matrix(model, data, filepath):
+    """Save visual confusion matrix to a given filepath."""
+    labels, preds = convert_from_1hot(model, data)
+    disp = metrics.ConfusionMatrixDisplay.from_predictions(labels, preds)
+    disp.plot().figure_.savefig(filepath)
 
 
 def flip_images(src_path, dst_path, substr='L'):
