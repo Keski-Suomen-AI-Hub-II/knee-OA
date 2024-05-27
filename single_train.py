@@ -130,8 +130,8 @@ def main():
     # Perform grid search and save the best models.
     traindata_dir = args.dir_train
     valdata_dir = args.dir_val
-    src_shape = (224, 224)
-    dest_shape = (224, 224, 3)
+    src_shape = (100, 224)
+    dest_shape = (100, 224, 3)
     utils.reserve_gpu(args.gpu_id)
     best_results = grid_search(configs, args.classes, traindata_dir,
                                valdata_dir, training_path, src_shape,

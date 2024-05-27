@@ -81,6 +81,22 @@ def flip_images(src_path, dst_path, substr='L'):
                 ski.io.imsave(dst_filepath, flipped)
 
 
+def crop_images(src_path, dst_path, x_min, x_max, y_min, y_max):
+    """Save the cropped images."""
+    for src_dirpath, _, filenames in os.walk(src_path):
+        dst_dirpath = src_dirpath.replace(src_path, dst_path, 1)
+        os.makedirs(dst_dirpath, exist_ok=True)
+        for filename in filenames:
+            src_filepath = os.path.sep.join([src_dirpath, filename])
+            dst_filepath = os.path.sep.join([dst_dirpath, filename])
+            img = ski.io.imread(src_filepath)
+            # Only one channel.
+            if len(img) > 2:
+                img = img[:, :]
+            img_cropped = img[y_min:y_max, x_min:x_max]
+            ski.io.imsave(dst_filepath, img_cropped)
+
+
 def enhance_contrast(src_path, dst_path):
     """Perform histogram equalization on all the images inside src_path."""
     for src_dirpath, _, filenames in os.walk(src_path):
@@ -159,13 +175,7 @@ def train_model(model, ds_train, ds_val, epochs, trainlog_path,
 
 
 def main():
-    templates_path = '../eminentia/eminentia_samples/output'
-    datapath = '../eminentia/dataset_i/data'
-    cropped_datapath = '../eminentia/autocropped_from_hist_eq_data'
-    cropped_datapath_enh = '../eminentia/dataset_i/autocropped'
-    shape_to_save = (224, 224)
-    crop_images(datapath, cropped_datapath, templates_path, shape_to_save)
-    enhance_contrast(cropped_datapath, cropped_datapath_enh)
+    pass
 
 
 if __name__ == '__main__':
