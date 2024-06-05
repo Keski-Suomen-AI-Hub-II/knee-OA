@@ -38,6 +38,10 @@ def generate_heatmap(model, img1_path, img2_path, img_size, num_of_img, alpha):
         x = model.get_layer(index=ind)(x)
     classifier_model = tf.keras.Model([classifier_input1, classifier_input2],
                                       x)
+    # Remove the activation of the Dense layer, because in the
+    # original article, the gradients are computed before the
+    # softmax.
+    classifier_model.get_layer(index=-1).activation = None
 
     # Get gradients.
     with tf.GradientTape() as tape:
@@ -86,14 +90,13 @@ def save_heatmaps(model, img1_path, img2_path, img_size, heatmaps_path,
                                                     img2_path, img_size, i,
                                                     alpha)
         plt.subplot(1, 2, i)
-        plt.title('Prediction: {}'.format(prediction))
         plt.imshow(superimposed)
-    plt.suptitle('Class: {}'.format(classname))
+    plt.suptitle('Class: {}\nPrediction: {}'.format(classname, prediction))
     plt.savefig(heatmaps_path)
     plt.close(fig)
 
 
-def heatmaps_from_dirs(model, src_dir1, src_dir2, img_size, dst_dir, alpha):
+def heatmaps_from_dirs(model, src_dir1, src_dir2, img_size, dst_dir, alpha=.7):
     """Generate heatmaps from the images inside src_dir1 and src_dir2."""
     for classname in os.listdir(src_dir1):
         src_classpath1 = os.path.sep.join([src_dir1, classname])

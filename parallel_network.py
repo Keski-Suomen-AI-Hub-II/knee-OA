@@ -53,11 +53,9 @@ class ParallelNetwork:
 
     def augment(self, branch_id):
         input_ = layers.Input(self.input_shape)
-        #x = layers.RandomFlip(mode='horizontal')(input_)
-        x = layers.RandomTranslation(.1, .1)(input_)
-        x = layers.RandomRotation(.1)(x)
-        x = layers.RandomZoom(.2, .2)(x)
-        x = layers.RandomContrast(.1, .1)(x)
+        x = layers.RandomTranslation(.05, .05)(input_)
+        x = layers.RandomRotation(.01)(x)
+        x = layers.RandomZoom(.05, .05)(x)
         model_augm = Model(inputs=input_,
                            outputs=x,
                            name=self.augm_names[branch_id])
@@ -75,7 +73,7 @@ class ParallelNetwork:
         return model_branch
 
     def base_model(self):
-        """Return the proprocessor and the base model without top layers."""
+        """Return the preprocessor and the base model without top layers."""
         name = self.base_modelname
         if name == 'vgg-16':
             preprocessor = tf.keras.applications.vgg16.preprocess_input

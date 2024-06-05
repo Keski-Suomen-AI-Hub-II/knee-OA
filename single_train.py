@@ -85,9 +85,6 @@ def save_models(dirpath, results):
 def main():
     # Get the command line arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument('base_model',
-                        help='convolutional base model',
-                        type=str)
     parser.add_argument('dir_train', help='training data directory', type=str)
     parser.add_argument('dir_val', help='validation data directory', type=str)
 
@@ -113,17 +110,19 @@ def main():
 
     # Different configurations consist of several parameter combinations.
     param_grid = {
-        'base_model': [args.base_model],
+        'base_model': [
+            'vgg-16', 'vgg-19', 'inception_v3', 'xception', 'densenet-121',
+            'densenet-169', 'mobilenet_v2', 'resnet-50'
+        ],
         'weights': [args.weights],
-        'lr': [1e-4, 1e-5, 1e-6],
+        'lr': [1e-3, 1e-4, 1e-5, 1e-6],
         'dropout': [0, .3]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
 
     # Name grid search directory by convnet and starting time.
     time = datetime.now().strftime('%y-%m-%d-%H%M%S')
-    training_path = 'single-{}-class_{}_{}'.format(args.classes,
-                                                   args.base_model, time)
+    training_path = 'single-{}-class_{}'.format(args.classes, time)
     if not os.path.exists(training_path):
         os.mkdir(training_path)
 

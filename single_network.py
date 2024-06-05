@@ -15,28 +15,52 @@ class SingleNetwork:
         self.classes = classes
         self.weights = weights
         self.dropout = dropout
+        # The names 'branch1', 'input1', and 'augment1' are as in
+        # the parallel network, although this network only has one
+        # branch.
+        self.branch_name = 'branch1'
+        self.input_name = 'input1'
+        self.augm_name = 'augment1'
 
     def build(self):
         """Return the model."""
-        input_ = layers.Input(self.input_shape)
-
         # Augmentations.
-        x = self.augment(input_)
+        augm = self.augment()
 
         # Convolutional layers.
-        preprocess, conv = self.base_model()
-        x = preprocess(x)
-        x = conv(x, training=False)
+        conv = self.branch()
+
+        # Input, augmentations, and convs.
+        input_ = layers.Input(self.input_shape, name=self.input_name)
+        augm_output = augm(input_)
+        conv_output = conv(augm_output, training=False)
 
         # Pool, classify, and return the model.
-        x = layers.GlobalAveragePooling2D()(x)
+        x = layers.GlobalAveragePooling2D()(conv_output)
         x = layers.Dropout(self.dropout)(x)
         output_ = layers.Dense(self.classes, activation='softmax')(x)
         model = Model(inputs=input_, outputs=output_)
         return model
 
+    def augment(self):
+        input_ = layers.Input(self.input_shape)
+        x = layers.RandomTranslation(.05, .05)(input_)
+        x = layers.RandomRotation(.01)(x)
+        x = layers.RandomZoom(.05, .05)(x)
+        model_augm = Model(inputs=input_, outputs=x, name=self.augm_name)
+        return model_augm
+
+    def branch(self):
+        """Return the convolutional layers ('branch') as a model."""
+        input_ = layers.Input(self.input_shape)
+        preprocess, base = self.base_model()
+        x = preprocess(input_)
+        x = base(x)
+        model_branch = Model(inputs=input_, outputs=x, name=self.branch_name)
+        return model_branch
+
     def base_model(self):
-        """Return the proprocessor and the base model without top layers."""
+        """Return the preprocessor and the base model without top layers."""
         name = self.base_modelname
         if name == 'vgg-16':
             preprocessor = tf.keras.applications.vgg16.preprocess_input
@@ -68,11 +92,3 @@ class SingleNetwork:
                     weights=self.weights,
                     input_shape=self.input_shape)
         return preprocessor, base
-
-    def augment(self, input_):
-        #x = layers.RandomFlip(mode='horizontal')(input_)
-        x = layers.RandomTranslation(.1, .1)(input_)
-        x = layers.RandomRotation(.1)(x)
-        x = layers.RandomZoom(.2, .2)(x)
-        x = layers.RandomContrast(.1, .1)(x)
-        return x
