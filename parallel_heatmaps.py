@@ -38,8 +38,8 @@ def generate_heatmap(model, img1_path, img2_path, img_size, num_of_img, alpha):
         x = model.get_layer(index=ind)(x)
     classifier_model = tf.keras.Model([classifier_input1, classifier_input2],
                                       x)
-    # Remove the activation of the Dense layer, because in the
-    # original article, the gradients are computed before the
+    # Remove the activation of the Dense layer, because according to
+    # the original article, the gradients are computed before the
     # softmax.
     classifier_model.get_layer(index=-1).activation = None
 
