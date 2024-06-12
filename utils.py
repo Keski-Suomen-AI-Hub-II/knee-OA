@@ -130,14 +130,27 @@ def resize_imgs(src_path, dst_path, shape_to_save):
             ski.io.imsave(dst_filepath, img_resized)
 
 
-def copy_random_files(src_path, dst_path, n_files):
-    """Copy random files to dst_path."""
-    all_fnames = os.listdir(src_path)
-    rand_fnames = rand.choices(all_fnames, k=n_files)
+def copy_move_files(src_path, dst_path, filenames, move=False):
+    """Copy or move files with listed filenames to dst_path."""
     os.makedirs(dst_path, exist_ok=True)
-    for fname in rand_fnames:
+    for fname in filenames:
         fpath = os.path.sep.join([src_path, fname])
-        shutil.copy(fpath, dst_path)
+        if move:
+            shutil.move(fpath, dst_path)
+        else:
+            shutil.copy(fpath, dst_path)
+
+
+def copy_move_random_files(src_path, dst_path, n_files, move=False):
+    """Copy or move random files to dst_path."""
+    all_fnames = os.listdir(src_path)
+    rand_fnames = rand.sample(all_fnames, n_files)
+    copy_move_files(src_path, dst_path, rand_fnames, move=move)
+
+
+def move_random_files(src_path, dst_path, n_files):
+    """Move random files to dst_path."""
+    copy_move_random_files(src_path, dst_path, n_files, move=True)
 
 
 def replace_from_filenames(dirpath, old, new):
