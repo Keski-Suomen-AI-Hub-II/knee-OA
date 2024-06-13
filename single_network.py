@@ -44,7 +44,8 @@ class SingleNetwork:
 
     def augment(self):
         input_ = layers.Input(self.input_shape)
-        x = layers.RandomTranslation(0, .05)(input_)
+        x = layers.RandomFlip(mode='horizontal')(input_)
+        x = layers.RandomTranslation(0, .05)(x)
         x = layers.RandomRotation(.01)(x)
         x = layers.RandomZoom(.05, .05)(x)
         model_augm = Model(inputs=input_, outputs=x, name=self.augm_name)
