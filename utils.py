@@ -107,7 +107,7 @@ def enhance_contrast(src_path, dst_path):
             dst_filepath = os.path.sep.join([dst_dirpath, filename])
             img = ski.io.imread(src_filepath)
             # Only one channel.
-            if len(img) > 2:
+            if len(img.shape) > 2:
                 img = img[:, :, 0]
             img_enh = ski.exposure.equalize_hist(img)
             img_enh = ski.util.img_as_ubyte(img_enh)  # Convert to 8-bit ints.
@@ -153,13 +153,14 @@ def move_random_files(src_path, dst_path, n_files):
     copy_move_random_files(src_path, dst_path, n_files, move=True)
 
 
-def replace_from_filenames(dirpath, old, new):
+def replace_from_filenames(src_path, old, new):
     """Replace specific substring in all the files inside directory."""
-    for fname in os.listdir(dirpath):
-        fpath = os.path.sep.join([dirpath, fname])
-        fname_new = fname.replace(old, new)
-        fpath_new = os.path.sep.join([dirpath, fname_new])
-        os.rename(fpath, fpath_new)
+    for src_dirpath, _, filenames in os.walk(src_path):
+        for fname in filenames:
+            fpath = os.path.sep.join([src_dirpath, fname])
+            fname_new = fname.replace(old, new)
+            fpath_new = os.path.sep.join([src_dirpath, fname_new])
+            os.rename(fpath, fpath_new)
 
 
 def train_model(model, ds_train, ds_val, epochs, trainlog_path,
