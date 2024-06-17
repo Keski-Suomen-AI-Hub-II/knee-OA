@@ -8,6 +8,7 @@ import numpy as np
 import skimage as ski
 import tensorflow as tf
 from sklearn import metrics
+from sklearn.model_selection import KFold
 from tensorflow.config import list_physical_devices, set_visible_devices
 from tensorflow.config.experimental import set_memory_growth
 from tensorflow.keras import callbacks
@@ -161,6 +162,53 @@ def replace_from_filenames(src_path, old, new):
             fname_new = fname.replace(old, new)
             fpath_new = os.path.sep.join([src_dirpath, fname_new])
             os.rename(fpath, fpath_new)
+
+
+def split_files(src_root1,
+                src_root2,
+                dst_root,
+                classname,
+                k=5,
+                dir1_specifier='data',
+                dir2_specifier='cropped'):
+    """Split files of one class for k-fold cross validation."""
+    # Source directories are assumed to be under the source root directories.
+    classname = str(classname)
+    src_dir1 = os.path.sep.join([src_root1, classname])
+    src_dir2 = os.path.sep.join([src_root2, classname])
+
+    kf = KFold(n_splits=k, shuffle=True)
+    filenames = os.listdir(src_dir1)
+
+    # Iterate over the splits.
+    split_ind = 0
+    for train_inds, val_inds in kf.split(filenames):
+        # Get the filenames for training and validation.
+        train_names = [filenames[i] for i in train_inds]
+        val_names = [filenames[i] for i in val_inds]
+
+        # Make directories for training and validation data.
+        split_name = 'split{}'.format(split_ind)
+        dst_traindir1 = os.path.sep.join(
+            [dst_root, split_name, dir1_specifier, 'train', classname])
+        dst_traindir2 = os.path.sep.join(
+            [dst_root, split_name, dir2_specifier, 'train', classname])
+        os.makedirs(dst_traindir1, exist_ok=True)
+        os.makedirs(dst_traindir2, exist_ok=True)
+        dst_valdir1 = os.path.sep.join(
+            [dst_root, split_name, dir1_specifier, 'val', classname])
+        dst_valdir2 = os.path.sep.join(
+            [dst_root, split_name, dir2_specifier, 'val', classname])
+        os.makedirs(dst_valdir1, exist_ok=True)
+        os.makedirs(dst_valdir2, exist_ok=True)
+
+        # Copy files to destination directories.
+        copy_move_files(src_dir1, dst_traindir1, train_names)
+        copy_move_files(src_dir2, dst_traindir2, train_names)
+        copy_move_files(src_dir1, dst_valdir1, val_names)
+        copy_move_files(src_dir2, dst_valdir2, val_names)
+
+        split_ind += 1
 
 
 def train_model(model, ds_train, ds_val, epochs, trainlog_path,
