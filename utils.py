@@ -33,32 +33,20 @@ def convert_from_1hot(model, data):
     return labels, preds
 
 
-def write_metrics(model, data, filepath):
+def write_metrics(model, data, filepath, desc_text=''):
     """Write classification metrics to a given filepath."""
     # Get the labels and preds.
     labels, preds = convert_from_1hot(model, data)
+    # Get the confusion matrix.
+    cm = metrics.confusion_matrix(labels, preds)
 
     # Calculate and save the metrics.
     report = metrics.classification_report(labels, preds)
     with open(filepath, mode='a') as f:
+        if desc_text:
+            f.write(desc_text)
+        f.write(cm)
         f.write(report)
-
-
-def write_confusion_matrix(model, data, filepath, desc_text):
-    """Save confusion matrix to a given filepath."""
-    # Get the labels and preds.
-    labels, preds = convert_from_1hot(model, data)
-
-    # Calculate and save the confusion matrix.
-    cm = metrics.confusion_matrix(labels, preds)
-    with open(filepath, mode='a') as f:
-        f.write(desc_text)
-        f.write(str(cm))
-        f.write('\n')
-        for i in range(cm.shape[0]):
-            class_acc = cm[i, i] / sum(cm[i])
-            f.write('Class {}: {:.6f}\n'.format(i, class_acc))
-        f.write('\n')
 
 
 def visualize_confusion_matrix(model, data, filepath):

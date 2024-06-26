@@ -49,13 +49,13 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
 
-        # Train the model. With the best weights, print confusion matrix for
+        # Train the model. With the best weights, print metrics for
         # the training and validation data.
         utils.train_model(model, ds_train, ds_val, n_epochs, trainlog_path,
                           checkpoint_dirpath)
         for (data, text) in [(ds_train, 'Training data:\n'),
                              (ds_val, 'Validation data:\n')]:
-            utils.write_confusion_matrix(model, data, trainlog_path, text)
+            utils.write_metrics(model, data, trainlog_path, text)
 
         # If models are to be saved, then:
         #   calculate val accuracy
