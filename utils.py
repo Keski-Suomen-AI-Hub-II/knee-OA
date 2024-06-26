@@ -45,7 +45,7 @@ def write_metrics(model, data, filepath, desc_text=''):
     with open(filepath, mode='a') as f:
         if desc_text:
             f.write(desc_text)
-        f.write(cm)
+        f.write(str(cm))
         f.write(report)
 
 
