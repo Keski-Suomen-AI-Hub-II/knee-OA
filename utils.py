@@ -46,7 +46,9 @@ def write_metrics(model, data, filepath, desc_text=''):
         if desc_text:
             f.write(desc_text)
         f.write(str(cm))
+        f.write('\n')
         f.write(report)
+        f.write('\n')
 
 
 def visualize_confusion_matrix(model, data, filepath):
