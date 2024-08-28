@@ -41,7 +41,7 @@ def write_metrics(model, data, filepath, desc_text=''):
     cm = metrics.confusion_matrix(labels, preds)
 
     # Calculate and save the metrics.
-    report = metrics.classification_report(labels, preds)
+    report = metrics.classification_report(labels, preds, digits=5)
     with open(filepath, mode='a') as f:
         if desc_text:
             f.write(desc_text)
@@ -51,11 +51,16 @@ def write_metrics(model, data, filepath, desc_text=''):
         f.write('\n')
 
 
-def visualize_confusion_matrix(model, data, filepath):
-    """Save visual confusion matrix to a given filepath."""
-    labels, preds = convert_from_1hot(model, data)
+def visualize_confusion_matrix_from_preds(labels, preds, filepath):
+    """Get confusion matrix from predictions and save it as an image."""
     disp = metrics.ConfusionMatrixDisplay.from_predictions(labels, preds)
     disp.plot().figure_.savefig(filepath)
+
+
+def visualize_confusion_matrix(model, data, filepath):
+    """Get and save confusion matrix."""
+    labels, preds = convert_from_1hot(model, data)
+    visualize_confusion_matrix_from_preds(labels, preds, filepath)
 
 
 def flip_images(src_path, dst_path, substr='L'):
