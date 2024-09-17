@@ -41,6 +41,7 @@ def grid_search(configs, classes, traindata_dirs, valdata_dirs, training_path,
         # Build and compile the model.
         network = ParallelNetwork(dest_shape,
                                   config['base_model'],
+                                  config['alpha'],
                                   classes=classes,
                                   weights=config['weights'],
                                   dropout=config['dropout'])
@@ -120,8 +121,9 @@ def main():
     param_grid = {
         'base_model': [args.base_model],
         'weights': [args.weights],
-        'lr': [1e-4, 1e-5, 1e-6],
-        'dropout': [0, .3]
+        'lr': [1e-5],
+        'dropout': [.3],
+        'alpha': [0, .25, .5, .75, 1]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
 

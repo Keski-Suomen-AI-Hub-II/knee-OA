@@ -7,11 +7,13 @@ class ParallelNetwork:
     def __init__(self,
                  input_shape,
                  base_modelname,
+                 alpha,
                  classes=5,
                  weights='imagenet',
                  dropout=0):
         self.input_shape = input_shape
         self.base_modelname = base_modelname
+        self.alpha = alpha
         self.classes = classes
         self.weights = weights
         self.dropout = dropout
@@ -45,8 +47,7 @@ class ParallelNetwork:
 
         # Concatenate and classify.
         combined = layers.Concatenate(axis=-1)([conv1_output, conv2_output])
-        x = layers.GlobalAveragePooling2D()(combined)
-        x = layers.Dropout(self.dropout)(x)
+        x = layers.Dropout(self.dropout)(combined)
         output_layer = layers.Dense(self.classes, activation='softmax')(x)
         model = Model(inputs=(input1, input2), outputs=output_layer)
         return model
@@ -68,6 +69,11 @@ class ParallelNetwork:
         preprocess, base = self.base_model()
         x = preprocess(input_)
         x = base(x)
+        x = layers.GlobalAveragePooling2D()(x)
+        if branch_id == 0:
+            x = tf.multiply(self.alpha, x)
+        else:
+            x = tf.multiply(1 - self.alpha, x)
         model_branch = Model(inputs=input_,
                              outputs=x,
                              name=self.branch_names[branch_id])
