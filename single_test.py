@@ -39,7 +39,7 @@ def test_model(base_model, weights_path, classes, dir_test, dst_shape,
 
 
 def main():
-    base_model = '_v2'
+    base_model = ''
     dir_test = ''
     weights_path = ''
     classes = 5

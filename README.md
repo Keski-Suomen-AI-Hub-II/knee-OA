@@ -105,3 +105,16 @@ Configuration 0: {'base_model': 'vgg-19', 'dropout': 0, 'lr': 0.0001, 'weights':
 ```
 
 The first row specifies the hyperparamaters of the configuration at hand. The next rows have number of epoch, training accuracy, training loss, validation accuracy, and validation loss.
+
+## Testing the network
+
+To test the single-scale network, modify the `main()` method in `single_test.py`. You must assign values to the following variables in the method:
+
+- `base_model`: the base convolutional network (as above).
+- `dir_test`: directory containing the test data.
+- `weights_path`: path to the `.h5` file.
+- `classes`: number of classes (as above).
+- `batch_size`: batch size.
+- `report_dir`: directory where you want the test results to be saved.
+
+The same applies to the `main()` method in `parallel_test.py`, except that now there are two directories for the test data: `dir1_test` and `dir2_test`. The testing script will save the classification results in text file `results.txt` and the confusion matrix in `conf_matrix.png` inside `report_dir`.
