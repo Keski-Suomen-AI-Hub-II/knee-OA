@@ -123,7 +123,7 @@ def main():
         'weights': [args.weights],
         'lr': [1e-5],
         'dropout': [.3],
-        'alpha': [0, .25, .5, .75, 1]
+        'alpha': [0., .25, .5, .75, 1.]
     }
     configs = enumerate(list(ParameterGrid(param_grid)))
 
