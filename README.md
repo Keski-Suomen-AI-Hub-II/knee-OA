@@ -4,9 +4,9 @@ Osteoarthritis (OA) is the most common joint disease in the world. Its risk fact
 
 Grading systems used to assess the severity of OA from X-ray images include Osteoarthritis Research Society International (OARSI) and Kellgren–Lawrence (KL). KL classification consists of grades 0 to 4, 0 meaning no OA, 1 doubtful, 2 minimal, 3 moderate, and 4 severe OA. Assigning a KL grading to a radiograph is basically a multiclass classification problem, which gives a reason to assume that convolutional neural networks can be trained to solve the problem. Commonly used datasets are the data from Osteoarthritis Initiative (OAI) and Multicenter Osteoarthritis Study (MOST).
 
-Overall, it seems that the problem of automatic KL grading will not be solved by applying different neural network architectures. Therefore, other means, such as inclusion of prior knowledge in the model development or enriching the diversity and quality of data will be needed.
+Despite recent advances, it seems that the problem of automatic KL grading will not be solved by applying different neural network architectures. Therefore, other means, such as inclusion of prior knowledge in the model development or enriching the diversity and quality of data will be needed.
 
-We have developed two methods that utilize such prior knowledge.
+We have utilized this kind of prior knowledge in two ways:
 
 * Sharpening of intercondylar tubercles, or tibial spiking, has been hypothesized to be an early sign of knee OA. Our [multi-scale network](tibial-spiking) pays attention to the intercondylar tubercles as well as the knee joint in general.
 * Not all pixels in X-ray image are equally important. We trained neural networks with only [lateral and medial edges](edge-parts).

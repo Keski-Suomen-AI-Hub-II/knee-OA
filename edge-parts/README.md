@@ -2,7 +2,7 @@
 
 ## The idea
 
-Neural network based knee KL classifiers are usually trained using (center cropped) PA X-ray images. However, these images contain excessive information. We implemented a KL classification pipeline using cropped images with only lateral and medial edges. Our network can also handle the non-cropped images, which makes the comparison possible.
+Neural network based knee KL classifiers are usually trained using (center cropped) PA X-ray images. However, these images contain excessive information. We implemented a KL classification pipeline using cropped images with only lateral and medial edges. Our network can also handle the non-cropped images, which makes it possible to compare the results.
 
 ![Original and cropped images](./imgs/cropping.png "Original and cropped images")
 
@@ -60,7 +60,7 @@ To prepare the data, issue command
 python prepare_data.py path/to/archive/ path/to/non-cropped/ path/to/cropped/
 ```
 
-where `path/to/archive/` is root directory of the data. The histogram-equalized images will be saved to `path/to/non-cropped/`. Histogram-equalized images will also be cropped and saved to `path/to/cropped/`. You can use absolute or relative paths, and the directories `path/to/non-cropped` and `path/to/cropped/` will be created if the don't exist. If you use the network to do other than the conventional 5-class classification, you must structure the directiories accordingly. For example, if you should remove the subdirectories `3` and `4` if you use only classes 0, 1, and 2.
+where `path/to/archive/` is root directory of the data. The histogram-equalized images will be saved to `path/to/non-cropped/`. Histogram-equalized images will also be cropped and saved to `path/to/cropped/`. You can use absolute or relative paths, and the directories `path/to/non-cropped` and `path/to/cropped/` will be created if they don't exist. If you use the network for other than the conventional 5-class classification, you must structure the directiories accordingly. For example, you should remove the subdirectories `3` and `4` if you use only classes 0, 1, and 2.
 
 
 ## The network
