@@ -2,13 +2,16 @@
 
 ## Info
 
-Spiking of tibial tubercles has been hypothesized to be an early sign of knee osteoarthritis. Our multi-scale approach is aimed to make neural network pay attention to tibial tubercles as well as the knee joint in general. The network has two branches, as illustrated in the figure below. 
+Spiking of tibial tubercles has been hypothesized to be an early sign of knee osteoarthritis. Our multi-scale approach is aimed to make neural network pay attention to tibial tubercles as well as the knee joint in general. The network has two branches, as illustrated in the figure below.
 
 ![Network with two branches](./imgs/multi-scale.png "Two-branch network")
 
 For comparison, we also have a single-branch network, illustrated below.
 
 ![Network with single branch](./imgs/single-scale.png "Single-branch network")
+
+
+Our manually cropped dataset is available at [Mendeley Data](https://data.mendeley.com/datasets/6gbptmgp3y/1).
 
 
 ## Dependencies
@@ -26,7 +29,7 @@ Other versions may work too, but the configuration above has been tested.
 
 ## Training the network
 
-There are two training scripts: `single_train.py` for single-branch and `parallel_train` for two-branch network. Both of them perform a grid search varying learning rate and dropout rate. Input images are supposed to be of size $224\times 100$. Both networks can be trained to do classification with data of $n\geq 2$ classes, but of course the directory hierarchy must have been structured accordingly. This property is useful, if some KL classes are merged. For traditional 5 KL classes, the directory hierarchy could be as follows: 
+There are two training scripts: `single_train.py` for single-branch and `parallel_train` for two-branch network. Both of them perform a grid search varying learning rate and dropout rate. Input images are supposed to be of size $224\times 100$. Both networks can be trained to do classification with data of $n\geq 2$ classes, but of course the directory hierarchy must have been structured accordingly. This property is useful, if some KL classes are merged. For traditional 5 KL classes, the directory hierarchy could be as follows:
 ```
 data
 |--- train
@@ -34,7 +37,7 @@ data
 |    |--- 1
 |    |--- 2
 |    |--- 3
-|    |--- 4    
+|    |--- 4
 |--- val
 |    |--- 0
 |    |--- 1
@@ -47,7 +50,7 @@ data
 |    |--- 2
 |    |--- 3
 |    |--- 4
-``` 
+```
 
 ### Single-branch network
 
