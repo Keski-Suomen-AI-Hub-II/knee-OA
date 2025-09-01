@@ -12,18 +12,14 @@ As we can see from the Grad-CAM images below, it is no surprise that lateral and
 
 ## Dependencies
 
-TBA
-
-<!-- **Tämä pitää päivittää!** -->
-
-<!-- - Python 3.11 -->
-<!-- - CUDA Toolkit 11.8.0 -->
-<!-- - cuDNN 8.9.2.26 -->
-<!-- - CUDA NVCC 12.3.107 -->
-<!-- - TensorFlow 2.14 -->
-<!-- - Scikit-image 0.22 -->
-<!-- - Scikit-learn 1.3.2 -->
-<!-- - Matplotlib 3.8. -->
+- Python 3.13
+- PyTorch 2.8.0
+- Torchvision 0.23.0
+- NumPy 2.2.6
+- Scikit-image 0.25.2
+- Scikit-learn 1.7.1
+- Matplotlib 3.10.5
+- Grad-CAM 3.10.5 (installable via `pip`: `pip install grad-cam`)
 
 ## The data
 

@@ -175,7 +175,7 @@ def main():
     parser.add_argument('--gpu_id', type=int, default=0)
     args = parser.parse_args()
 
-    device = torch.device("cuda", args.gpu_id)  # TODO: Testaa!!!
+    device = torch.device("cuda", args.gpu_id)
     train_dir = args.train_dir
     val_dir = args.val_dir
 
